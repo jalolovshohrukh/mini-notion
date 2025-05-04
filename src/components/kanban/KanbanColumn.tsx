@@ -36,8 +36,8 @@ interface KanbanColumnProps {
   tasks: Task[];
   draggingTaskId: string | null;
   onDrop: (columnId: string, taskId: string) => void;
-  onAddTask: (columnId: string, newTask: Omit<Task, "id" | "columnId">) => void; // No change needed here
-  onEditTask: (taskId: string, updatedTask: Omit<Task, "id" | "columnId">) => void; // No change needed here
+  onAddTask: (columnId: string, newTask: Omit<Task, "id" | "columnId">) => void;
+  onEditTask: (taskId: string, updatedTask: Omit<Task, "id" | "columnId">) => void;
   onDeleteTask: (taskId: string) => void;
   onDeleteColumn: (columnId: string) => void;
   onEditColumn: (columnId: string, newTitle: string, newColor: string) => void;
@@ -72,10 +72,17 @@ export function KanbanColumn({
     e.preventDefault();
     setIsOver(false);
     const taskId = e.dataTransfer.getData("taskId");
-    if (taskId && taskId !== draggingTaskId) { // Prevent dropping on self in the same column visually, though logic handles it
+    // Ensure taskId exists and is not the one currently being dragged within the same column
+    if (taskId && draggingTaskId === taskId && tasks.find(t => t.id === taskId)) {
+        // Avoid triggering onDrop if the item is dropped back into the same column visually
+        // The actual logic in the parent already handles the state update correctly if columnId changes
+        return;
+    }
+     if (taskId) {
        onDrop(column.id, taskId);
     }
   };
+
 
   const handleAddTaskSubmit = (newTask: Omit<Task, "id" | "columnId">) => {
     onAddTask(column.id, newTask);
@@ -100,16 +107,22 @@ export function KanbanColumn({
   const isLightColor = (hexColor: string): boolean => {
     try {
       const hex = hexColor.replace('#', '');
-      const r = parseInt(hex.substring(0, 2), 16);
-      const g = parseInt(hex.substring(2, 4), 16);
-      const b = parseInt(hex.substring(4, 6), 16);
+      // Handle short hex codes (#RGB)
+      const fullHex = hex.length === 3 ? hex.split('').map(c => c + c).join('') : hex;
+      if (fullHex.length !== 6) return true; // Default to light if format is wrong
+
+      const r = parseInt(fullHex.substring(0, 2), 16);
+      const g = parseInt(fullHex.substring(2, 4), 16);
+      const b = parseInt(fullHex.substring(4, 6), 16);
+      // Simple luminance calculation
       const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-      return luminance > 0.6;
+      return luminance > 0.6; // Threshold might need adjustment
     } catch (e) {
       console.error("Error determining color brightness, defaulting to dark text:", e);
-      return true;
+      return true; // Default to assuming light background on error
     }
   };
+
 
   const textColorClass = isLightColor(column.color) ? "text-foreground" : "text-white";
   const iconHoverBgClass = isLightColor(column.color) ? "hover:bg-foreground/10" : "hover:bg-white/10";
@@ -119,7 +132,6 @@ export function KanbanColumn({
     <div
       className={cn(
           "flex flex-col w-72 flex-shrink-0 rounded-lg shadow-inner h-full transition-colors duration-200",
-           // Enhanced drop indication: brighter ring and subtle background change
           isOver ? "ring-2 ring-primary ring-offset-2 bg-primary/5" : ""
         )}
       style={columnStyle}
@@ -200,15 +212,15 @@ export function KanbanColumn({
         </div>
 
       </div>
-      <ScrollArea className="flex-1 p-4 pt-0"> {/* Removed top padding */}
-        {/* Add padding top to this inner div to compensate */}
+      <ScrollArea className="flex-1 p-4 pt-0">
         <div className="min-h-[200px] pt-4">
           {tasks.map((task) => (
             <TaskCard
               key={task.id}
               task={task}
+              column={column} // Pass column down
               isDragging={draggingTaskId === task.id}
-              onEditTask={onEditTask} // Prop signature is correct
+              onEditTask={onEditTask}
               onDeleteTask={onDeleteTask}
             />
           ))}
@@ -217,7 +229,6 @@ export function KanbanColumn({
                Drag tasks here or click '+' to add.
              </div>
            )}
-           {/* Visual cue for dropping */}
            {isOver && (
              <div className="h-16 border-2 border-dashed border-primary/50 rounded-md bg-primary/10 flex items-center justify-center text-primary font-medium mt-2">
                Drop here
@@ -228,3 +239,4 @@ export function KanbanColumn({
     </div>
   );
 }
+
