@@ -1,11 +1,14 @@
+
 "use client";
 
 import React, { useState, useEffect, useContext } from "react";
 import { useRouter } from 'next/navigation';
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, Loader2 } from "lucide-react";
+import { Plus, LogOut, Loader2, Menu as MenuIcon } from "lucide-react"; // Added MenuIcon
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetFooter, SheetClose } from "@/components/ui/sheet"; // Added Sheet components
+import { Separator } from "@/components/ui/separator"; // Added Separator
 import { AddColumnForm } from "@/components/kanban/AddColumnForm";
 import type { Task, Column, Priority } from "@/lib/types";
 import { initialColumns, initialTasks } from "@/lib/initial-data"; // Adjust path if needed
@@ -26,6 +29,7 @@ export default function HomePage() { // Renamed component
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isClient, setIsClient] = useState(false);
   const [isAddColumnDialogOpen, setIsAddColumnDialogOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // State for mobile menu
 
   const { user, loading, logout } = useContext(AuthContext);
   const router = useRouter();
@@ -198,6 +202,7 @@ export default function HomePage() { // Renamed component
     };
     setColumns((prevColumns) => [...prevColumns, newColumn]);
     setIsAddColumnDialogOpen(false);
+    setIsMobileMenuOpen(false); // Close mobile menu after adding
   };
 
   const handleDeleteColumn = (columnIdToDelete: string) => {
@@ -214,6 +219,11 @@ export default function HomePage() { // Renamed component
         )
       );
   };
+
+  const triggerAddColumnDialog = () => {
+    setIsAddColumnDialogOpen(true);
+    setIsMobileMenuOpen(false); // Close mobile menu when dialog opens
+  }
 
   if (loading || !isClient) {
     return (
@@ -233,39 +243,79 @@ export default function HomePage() { // Renamed component
   }
 
   return (
-    <main className="flex flex-col h-screen bg-background">
-        <header className="p-4 border-b shrink-0 flex justify-between items-center">
-             <h1 className="text-xl font-semibold text-foreground">{t('metadata.title')}</h1> {/* Use translated title */}
-             <div className="flex items-center space-x-4"> {/* Increased spacing */}
-                 <LanguageSwitcher /> {/* Add LanguageSwitcher */}
-                 <Dialog open={isAddColumnDialogOpen} onOpenChange={setIsAddColumnDialogOpen}>
-                    <DialogTrigger asChild>
+    <Dialog open={isAddColumnDialogOpen} onOpenChange={setIsAddColumnDialogOpen}>
+        <main className="flex flex-col h-screen bg-background">
+            <header className="p-4 border-b shrink-0 flex justify-between items-center">
+                 {/* Placeholder for potential left-side icon/element if needed in future */}
+                 <div className="w-10 md:hidden"></div> {/* Takes up space on mobile */}
+                 <div className="hidden md:block w-10"></div> {/* Takes up space on desktop */}
+
+                 <h1 className="text-xl font-semibold text-foreground text-center flex-1">
+                    {t('metadata.title')}
+                 </h1>
+
+                {/* Desktop Actions */}
+                 <div className="hidden md:flex items-center space-x-4">
+                     <LanguageSwitcher />
+                     <DialogTrigger asChild>
                         <Button>
                             <Plus className="mr-2 h-4 w-4" /> {t('kanban.addColumnButton')}
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
-                        <AddColumnForm onAddColumn={handleAddColumn} onClose={() => setIsAddColumnDialogOpen(false)} />
-                    </DialogContent>
-                </Dialog>
-                 <Button variant="outline" onClick={logout}>
-                    <LogOut className="mr-2 h-4 w-4" /> {t('kanban.logoutButton')}
-                 </Button>
-             </div>
-        </header>
-        <div className="flex-1 overflow-hidden">
-            <KanbanBoard
-                columns={columns}
-                tasks={tasks}
-                onTaskDrop={handleTaskDrop}
-                onColumnDrop={handleColumnDrop}
-                onAddTask={handleAddTask}
-                onEditTask={handleEditTask}
-                onDeleteTask={handleDeleteTask}
-                onDeleteColumn={handleDeleteColumn}
-                onEditColumn={handleEditColumn}
-            />
-        </div>
-    </main>
+                     <Button variant="outline" onClick={logout}>
+                        <LogOut className="mr-2 h-4 w-4" /> {t('kanban.logoutButton')}
+                     </Button>
+                 </div>
+
+                 {/* Mobile Menu */}
+                 <div className="md:hidden">
+                     <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                        <SheetTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                                <MenuIcon className="h-6 w-6" />
+                                <span className="sr-only">Open menu</span>
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent side="right" className="w-[280px] p-0">
+                            <SheetHeader className="p-4 border-b">
+                                <SheetTitle>{t('mobileMenu.title')}</SheetTitle>
+                            </SheetHeader>
+                            <div className="flex flex-col p-4 space-y-4">
+                                <LanguageSwitcher />
+                                <Separator />
+                                 {/* Trigger for Add Column Dialog within Sheet */}
+                                <Button onClick={triggerAddColumnDialog} className="w-full justify-start">
+                                    <Plus className="mr-2 h-4 w-4" /> {t('kanban.addColumnButton')}
+                                </Button>
+                                <Separator />
+                                <Button variant="outline" onClick={logout} className="w-full justify-start">
+                                    <LogOut className="mr-2 h-4 w-4" /> {t('kanban.logoutButton')}
+                                </Button>
+                            </div>
+
+                        </SheetContent>
+                    </Sheet>
+                 </div>
+            </header>
+            <div className="flex-1 overflow-hidden">
+                <KanbanBoard
+                    columns={columns}
+                    tasks={tasks}
+                    onTaskDrop={handleTaskDrop}
+                    onColumnDrop={handleColumnDrop}
+                    onAddTask={handleAddTask}
+                    onEditTask={handleEditTask}
+                    onDeleteTask={handleDeleteTask}
+                    onDeleteColumn={handleDeleteColumn}
+                    onEditColumn={handleEditColumn}
+                />
+            </div>
+            {/* Dialog Content for Add Column - Stays outside Sheet/Header */}
+            <DialogContent className="sm:max-w-[425px]">
+                <AddColumnForm onAddColumn={handleAddColumn} onClose={() => setIsAddColumnDialogOpen(false)} />
+            </DialogContent>
+        </main>
+    </Dialog>
   );
 }
+

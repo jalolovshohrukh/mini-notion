@@ -107,5 +107,7 @@
   "assignee.unassigned": "Не назначен",
 
   "metadata.title": "CITY PARK",
-  "metadata.description": "Управляйте своими задачами с помощью простой доски Kanban."
+  "metadata.description": "Управляйте своими задачами с помощью простой доски Kanban.",
+
+  "mobileMenu.title": "Меню"
 }

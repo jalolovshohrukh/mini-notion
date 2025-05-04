@@ -107,5 +107,7 @@
   "assignee.unassigned": "Unassigned",
 
   "metadata.title": "CITY PARK",
-  "metadata.description": "Manage your tasks with a simple Kanban board."
+  "metadata.description": "Manage your tasks with a simple Kanban board.",
+
+  "mobileMenu.title": "Menu"
 }
