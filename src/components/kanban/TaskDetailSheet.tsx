@@ -57,6 +57,8 @@ const mockUsers = [
   { id: "user-3", name: "Charlie" },
 ];
 
+// Use a non-empty string for the "unassigned" value
+const UNASSIGNED_VALUE = "none";
 
 // Helper function to get badge variant based on priority (copied from TaskCard)
 const getPriorityBadgeVariant = (priority: Priority | undefined): VariantProps<typeof badgeVariants>["variant"] => {
@@ -86,17 +88,19 @@ export function TaskDetailSheet({ task, column, onEditTask, onDeleteTask, onClos
     const [editedTitle, setEditedTitle] = useState(task.title);
     const [editedDescription, setEditedDescription] = useState(task.description || "");
     const [editedPriority, setEditedPriority] = useState<Priority>(task.priority || "Medium");
-    const [editedAssigneeId, setEditedAssigneeId] = useState<string | undefined>(task.assigneeId); // State for assignee
+    // Initialize with UNASSIGNED_VALUE if assigneeId is undefined/empty
+    const [editedAssigneeId, setEditedAssigneeId] = useState<string>(task.assigneeId || UNASSIGNED_VALUE);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
 
     const handleSave = () => {
-        const selectedUser = mockUsers.find(user => user.id === editedAssigneeId);
+        const isAssigned = editedAssigneeId && editedAssigneeId !== UNASSIGNED_VALUE;
+        const selectedUser = isAssigned ? mockUsers.find(user => user.id === editedAssigneeId) : undefined;
         onEditTask(task.id, {
             title: editedTitle,
             description: editedDescription || undefined,
             priority: editedPriority,
-            assigneeId: editedAssigneeId || undefined,
+            assigneeId: isAssigned ? editedAssigneeId : undefined,
             assigneeName: selectedUser?.name || undefined,
         });
         setIsEditing(false);
@@ -109,7 +113,7 @@ export function TaskDetailSheet({ task, column, onEditTask, onDeleteTask, onClos
         setEditedTitle(task.title);
         setEditedDescription(task.description || "");
         setEditedPriority(task.priority || "Medium");
-        setEditedAssigneeId(task.assigneeId); // Reset assignee
+        setEditedAssigneeId(task.assigneeId || UNASSIGNED_VALUE); // Reset assignee
         setIsEditing(false);
     };
 
@@ -176,12 +180,13 @@ export function TaskDetailSheet({ task, column, onEditTask, onDeleteTask, onClos
               <UserIcon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
               <Label htmlFor="assignee" className="w-24 text-sm font-medium text-muted-foreground flex-shrink-0">Assignee</Label>
               {isEditing ? (
-                  <Select onValueChange={(value: string) => setEditedAssigneeId(value)} defaultValue={editedAssigneeId || ""}>
+                  <Select onValueChange={(value: string) => setEditedAssigneeId(value)} defaultValue={editedAssigneeId}>
                       <SelectTrigger className="w-[180px]">
                           <SelectValue placeholder="Select assignee" />
                       </SelectTrigger>
                       <SelectContent>
-                          <SelectItem value="">Unassigned</SelectItem>
+                          {/* Use a non-empty value for the unassigned option */}
+                          <SelectItem value={UNASSIGNED_VALUE}>Unassigned</SelectItem>
                           {mockUsers.map((user) => (
                               <SelectItem key={user.id} value={user.id}>
                                   {user.name}

@@ -54,6 +54,9 @@ type AddTaskFormProps = {
   onClose: () => void;
 };
 
+// Use a non-empty string for the "unassigned" value
+const UNASSIGNED_VALUE = "none";
+
 export function AddTaskForm({ columnId, onAddTask, onClose }: AddTaskFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -61,18 +64,19 @@ export function AddTaskForm({ columnId, onAddTask, onClose }: AddTaskFormProps) 
       title: "",
       description: "",
       priority: "Medium",
-      assigneeId: "", // Default assignee to empty
+      assigneeId: UNASSIGNED_VALUE, // Default assignee to unassigned value
     },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    const selectedUser = mockUsers.find(user => user.id === values.assigneeId);
+    const isAssigned = values.assigneeId && values.assigneeId !== UNASSIGNED_VALUE;
+    const selectedUser = isAssigned ? mockUsers.find(user => user.id === values.assigneeId) : undefined;
     onAddTask({
       title: values.title,
       description: values.description || undefined,
       priority: values.priority,
-      assigneeId: values.assigneeId || undefined, // Pass assigneeId
-      assigneeName: selectedUser?.name || undefined, // Pass assigneeName
+      assigneeId: isAssigned ? values.assigneeId : undefined, // Pass assigneeId only if assigned
+      assigneeName: selectedUser?.name || undefined, // Pass assigneeName only if assigned
     });
     form.reset();
     onClose(); // Close dialog on successful submit
@@ -145,14 +149,15 @@ export function AddTaskForm({ columnId, onAddTask, onClose }: AddTaskFormProps) 
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Assignee (Optional)</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                <Select onValueChange={field.onChange} defaultValue={field.value || UNASSIGNED_VALUE}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select assignee" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">Unassigned</SelectItem>
+                    {/* Use a non-empty value for the unassigned option */}
+                    <SelectItem value={UNASSIGNED_VALUE}>Unassigned</SelectItem>
                     {mockUsers.map((user) => (
                       <SelectItem key={user.id} value={user.id}>
                         {user.name}
