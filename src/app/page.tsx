@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { AddColumnForm } from "@/components/kanban/AddColumnForm";
-import type { Task, Column } from "@/lib/types";
+import type { Task, Column, Priority } from "@/lib/types"; // Import Priority
 import { initialColumns, initialTasks } from "@/lib/initial-data";
 import { generateTaskId, generateColumnId } from "@/lib/utils";
 
 // Basic HEX color format validation (e.g., #RRGGBB or #RGB)
 const hexColorRegex = /^#([0-9a-fA-F]{3}){1,2}$/;
+const validPriorities: Priority[] = ["High", "Medium", "Low"];
 
 export default function Home() {
   const [columns, setColumns] = useState<Column[]>([]);
@@ -29,8 +30,8 @@ export default function Home() {
     if (savedColumns) {
         try {
             const parsedColumns = JSON.parse(savedColumns);
-             // Basic validation: Check if it's an array and each item has id, title, and a string color (accepts HSL or HEX)
-            if (Array.isArray(parsedColumns) && parsedColumns.every(col => col.id && col.title && typeof col.color === 'string')) {
+             // Basic validation: Check if it's an array and each item has id, title, and a string color (accepts HEX)
+            if (Array.isArray(parsedColumns) && parsedColumns.every(col => col.id && col.title && typeof col.color === 'string' && hexColorRegex.test(col.color))) {
                  setColumns(parsedColumns);
             } else {
                 console.warn("Invalid or outdated columns data found in localStorage, using initial data.");
@@ -47,19 +48,30 @@ export default function Home() {
     if (savedTasks) {
          try {
             const parsedTasks = JSON.parse(savedTasks);
-             // Basic validation
-             if (Array.isArray(parsedTasks) && parsedTasks.every(task => task.id && task.title && task.columnId)) {
-                 setTasks(parsedTasks);
+             // Basic validation including priority
+             if (Array.isArray(parsedTasks) && parsedTasks.every(task =>
+                  task.id &&
+                  task.title &&
+                  task.columnId &&
+                  // Allow tasks without priority (defaults to Medium) or with a valid priority
+                  (task.priority === undefined || validPriorities.includes(task.priority))
+                )) {
+                 // Ensure priority exists, defaulting to 'Medium' if missing
+                 const tasksWithDefaults = parsedTasks.map(task => ({
+                     ...task,
+                     priority: task.priority || "Medium"
+                 }));
+                 setTasks(tasksWithDefaults);
             } else {
                  console.warn("Invalid tasks data found in localStorage, using initial data.");
-                 setTasks(initialTasks);
+                 setTasks(initialTasks.map(task => ({ ...task, priority: task.priority || "Medium" }))); // Ensure initial data also has default
             }
         } catch (error) {
             console.error("Error parsing tasks from localStorage:", error);
-            setTasks(initialTasks); // Fallback to initial data on parse error
+            setTasks(initialTasks.map(task => ({ ...task, priority: task.priority || "Medium" }))); // Fallback to initial data on parse error
         }
     } else {
-      setTasks(initialTasks);
+      setTasks(initialTasks.map(task => ({ ...task, priority: task.priority || "Medium" }))); // Ensure initial data also has default
     }
   }, []);
 
@@ -85,16 +97,19 @@ export default function Home() {
     );
   };
 
+  // Updated to include priority
   const handleAddTask = (columnId: string, newTaskData: Omit<Task, "id" | "columnId">) => {
      if (!isClient) return;
      const newTask: Task = {
         ...newTaskData,
         id: generateTaskId(),
         columnId: columnId,
+        priority: newTaskData.priority || "Medium", // Default to Medium if not provided
      };
      setTasks((prevTasks) => [...prevTasks, newTask]);
   };
 
+  // Updated to include priority
   const handleEditTask = (taskId: string, updatedTaskData: Omit<Task, "id" | "columnId">) => {
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
@@ -121,6 +136,7 @@ export default function Home() {
   const handleDeleteColumn = (columnIdToDelete: string) => {
      if (!isClient) return;
      setColumns((prevColumns) => prevColumns.filter((column) => column.id !== columnIdToDelete));
+     // Also delete tasks in the deleted column
      setTasks((prevTasks) => prevTasks.filter((task) => task.columnId !== columnIdToDelete));
   };
 
@@ -165,11 +181,11 @@ export default function Home() {
                 columns={columns}
                 tasks={tasks}
                 onDrop={handleDrop}
-                onAddTask={handleAddTask}
-                onEditTask={handleEditTask}
+                onAddTask={handleAddTask} // Updated handler passed down
+                onEditTask={handleEditTask} // Updated handler passed down
                 onDeleteTask={handleDeleteTask}
                 onDeleteColumn={handleDeleteColumn}
-                onEditColumn={handleEditColumn} // Pass down the edit handler
+                onEditColumn={handleEditColumn}
             />
         </div>
     </main>

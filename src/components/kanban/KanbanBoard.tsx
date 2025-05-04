@@ -4,19 +4,16 @@
 import React, { useState, useEffect } from "react";
 import { KanbanColumn } from "./KanbanColumn";
 import type { Task, Column } from "@/lib/types";
-// Removed initial data and ID generators, they are now managed in page.tsx
-// Removed Button, Plus, Dialog related imports as they are moved to page.tsx
-
 
 interface KanbanBoardProps {
     columns: Column[];
     tasks: Task[];
     onDrop: (columnId: string, taskId: string) => void;
-    onAddTask: (columnId: string, newTask: Omit<Task, "id" | "columnId">) => void;
-    onEditTask: (taskId: string, updatedTask: Omit<Task, "id" | "columnId">) => void;
+    onAddTask: (columnId: string, newTask: Omit<Task, "id" | "columnId">) => void; // No change needed here, signature remains same
+    onEditTask: (taskId: string, updatedTask: Omit<Task, "id" | "columnId">) => void; // No change needed here, signature remains same
     onDeleteTask: (taskId: string) => void;
     onDeleteColumn: (columnId: string) => void;
-    onEditColumn: (columnId: string, newTitle: string, newColor: string) => void; // New prop
+    onEditColumn: (columnId: string, newTitle: string, newColor: string) => void;
 }
 
 export function KanbanBoard({
@@ -27,21 +24,17 @@ export function KanbanBoard({
     onEditTask,
     onDeleteTask,
     onDeleteColumn,
-    onEditColumn, // Destructure new prop
+    onEditColumn,
 }: KanbanBoardProps) {
   // State for tracking the currently dragged task ID remains local to the board
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
 
    // Global drag start/end handlers to set the currently dragged task ID
-   // These could arguably live in page.tsx too, but keeping them here is fine
-   // as they are closely related to the board's internal drag interactions.
   useEffect(() => {
     const handleDragStart = (event: DragEvent) => {
       const target = event.target as HTMLElement;
       const cardElement = target.closest('[draggable="true"]');
       if (cardElement && event.dataTransfer) {
-         // Use a more reliable way to get the taskId if possible,
-         // but dataTransfer is the standard. Ensure it's set in TaskCard.
          event.dataTransfer.effectAllowed = 'move';
          // Retrieve the taskId set in TaskCard's onDragStart
          const taskId = event.dataTransfer.getData("taskId");
@@ -49,7 +42,6 @@ export function KanbanBoard({
             setDraggingTaskId(taskId);
          } else {
             // Fallback or error handling if taskId isn't set
-            // This might happen if the drag starts unexpectedly elsewhere
             const idFromAttribute = cardElement.getAttribute('data-task-id');
             if (idFromAttribute) {
                  event.dataTransfer.setData("taskId", idFromAttribute); // Set it if possible
@@ -84,15 +76,14 @@ export function KanbanBoard({
           column={column}
           tasks={tasks.filter((task) => task.columnId === column.id)}
           draggingTaskId={draggingTaskId}
-          onDrop={onDrop} // Pass down the handler from props
-          onAddTask={onAddTask} // Pass down the handler from props
-          onEditTask={onEditTask} // Pass down the handler from props
-          onDeleteTask={onDeleteTask} // Pass down the handler from props
-          onDeleteColumn={onDeleteColumn} // Pass down the handler from props
-          onEditColumn={onEditColumn} // Pass down the new handler
+          onDrop={onDrop}
+          onAddTask={onAddTask} // Prop signature is correct
+          onEditTask={onEditTask} // Prop signature is correct
+          onDeleteTask={onDeleteTask}
+          onDeleteColumn={onDeleteColumn}
+          onEditColumn={onEditColumn}
         />
       ))}
-       {/* "Add New Column" Button/Dialog is now removed from here and placed in page.tsx */}
     </div>
   );
 }

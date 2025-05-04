@@ -13,36 +13,42 @@ export const initialTasks: Task[] = [
     id: "task-1",
     title: "Setup Project Structure",
     description: "Initialize Next.js app and configure Tailwind.",
+    priority: "High", // Added priority
     columnId: "done",
   },
   {
     id: "task-2",
     title: "Create Kanban Components",
     description: "Build Board, Column, and Task components.",
+    priority: "High", // Added priority
     columnId: "inprogress",
   },
   {
     id: "task-3",
     title: "Implement Drag and Drop",
     description: "Add drag and drop functionality for tasks.",
+    priority: "Medium", // Added priority
     columnId: "todo",
   },
   {
     id: "task-4",
     title: "Add Task Management Features",
     description: "Implement adding, editing, and deleting tasks.",
+    priority: "Low", // Added priority
     columnId: "todo",
   },
    {
     id: "task-5",
     title: "Style the Board",
     description: "Apply the requested theme and styling.",
+    priority: "Medium", // Added priority
     columnId: "inprogress",
   },
    {
     id: "task-6",
     title: "Implement Add/Delete Columns",
     description: "Allow users to add and remove columns.",
+    priority: "High", // Added priority
     columnId: "todo",
    }
 ];

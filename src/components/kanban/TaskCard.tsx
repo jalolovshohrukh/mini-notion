@@ -2,9 +2,10 @@
 "use client";
 
 import React, { useState } from "react";
-import type { Task } from "@/lib/types";
+import type { Task, Priority } from "@/lib/types"; // Import Priority
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge"; // Import Badge
 import { Edit } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { EditTaskForm } from "./EditTaskForm";
@@ -12,18 +13,30 @@ import { cn } from "@/lib/utils";
 
 interface TaskCardProps {
   task: Task;
-  // columnId is removed as it's no longer used for styling here
   isDragging: boolean;
   onEditTask: (taskId: string, updatedTask: Omit<Task, "id" | "columnId">) => void;
   onDeleteTask: (taskId: string) => void;
 }
 
+// Helper function to get badge variant based on priority
+const getPriorityBadgeVariant = (priority: Priority | undefined): "default" | "secondary" | "destructive" => {
+    switch (priority) {
+        case "High":
+        return "destructive"; // Red for High
+        case "Medium":
+        return "secondary"; // Gray for Medium (or default if you prefer)
+        case "Low":
+        return "default"; // Default (primary) for Low
+        default:
+        return "secondary"; // Default if undefined
+    }
+};
+
+
 export function TaskCard({ task, isDragging, onEditTask, onDeleteTask }: TaskCardProps) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const handleEditDialogClose = () => setIsEditDialogOpen(false);
-
-  // Remove the cardBackgroundColor function, cards will use the default theme background
 
   return (
     <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -34,7 +47,6 @@ export function TaskCard({ task, isDragging, onEditTask, onDeleteTask }: TaskCar
           "bg-card text-card-foreground", // Explicitly use card background/foreground from theme
           isDragging ? "opacity-50 shadow-lg scale-105" : "opacity-100 shadow-sm", // Added scale on drag
           "hover:shadow-md relative group"
-          // Removed conditional background color class application
         )}
         draggable
         onDragStart={(e) => {
@@ -42,25 +54,35 @@ export function TaskCard({ task, isDragging, onEditTask, onDeleteTask }: TaskCar
           e.dataTransfer.effectAllowed = "move"; // Indicate the type of operation allowed
         }}
       >
-        <CardHeader className="p-4">
-          <CardTitle className="text-base font-medium mb-1 flex justify-between items-center">
-            {task.title}
-            <DialogTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2"
-                aria-label="Edit Task"
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-            </DialogTrigger>
-          </CardTitle>
+        <CardHeader className="p-3 space-y-1"> {/* Reduced padding and space */}
+          <div className="flex justify-between items-start gap-2">
+              <CardTitle className="text-sm font-medium line-clamp-2"> {/* Adjusted size and line clamp */}
+                {task.title}
+              </CardTitle>
+              {/* Edit button appears on hover */}
+              <DialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" // Added shrink-0
+                  aria-label="Edit Task"
+                >
+                  <Edit className="h-3 w-3" /> {/* Slightly smaller icon */}
+                </Button>
+              </DialogTrigger>
+          </div>
+          {/* Description */}
           {task.description && (
-            <CardDescription className="text-sm text-muted-foreground">
+            <CardDescription className="text-xs text-muted-foreground line-clamp-3"> {/* Adjusted size and line clamp */}
               {task.description}
             </CardDescription>
           )}
+           {/* Priority Badge */}
+           <div className="flex justify-start pt-1">
+             <Badge variant={getPriorityBadgeVariant(task.priority)} className="text-xs px-1.5 py-0.5"> {/* Smaller badge */}
+               {task.priority || "Medium"}
+             </Badge>
+           </div>
         </CardHeader>
       </Card>
       <DialogContent className="sm:max-w-[425px]">

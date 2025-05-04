@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,17 +17,27 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"; // Import Select components
+import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import type { Column, Task } from "@/lib/types";
+import type { Task, Priority } from "@/lib/types"; // Import Priority type
+
+const priorities: Priority[] = ["High", "Medium", "Low"];
 
 const formSchema = z.object({
   title: z.string().min(1, { message: "Title is required." }).max(50),
   description: z.string().max(200).optional(),
+  priority: z.enum(priorities).default("Medium"), // Add priority field with default
 });
 
 type AddTaskFormProps = {
@@ -41,6 +52,7 @@ export function AddTaskForm({ columnId, onAddTask, onClose }: AddTaskFormProps) 
     defaultValues: {
       title: "",
       description: "",
+      priority: "Medium", // Set default priority for the form
     },
   });
 
@@ -48,6 +60,7 @@ export function AddTaskForm({ columnId, onAddTask, onClose }: AddTaskFormProps) 
     onAddTask({
       title: values.title,
       description: values.description || undefined,
+      priority: values.priority, // Pass priority
     });
     form.reset();
     onClose(); // Close dialog on successful submit
@@ -85,6 +98,31 @@ export function AddTaskForm({ columnId, onAddTask, onClose }: AddTaskFormProps) 
                 <FormControl>
                   <Textarea placeholder="Task description" {...field} />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          {/* Priority Select Field */}
+          <FormField
+            control={form.control}
+            name="priority"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Priority</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select priority" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {priorities.map((priority) => (
+                      <SelectItem key={priority} value={priority}>
+                        {priority}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
