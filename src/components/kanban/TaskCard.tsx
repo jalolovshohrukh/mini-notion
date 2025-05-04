@@ -5,11 +5,12 @@ import React, { useState } from "react";
 import type { Task, Priority } from "@/lib/types"; // Import Priority
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge"; // Import Badge
+import { Badge, badgeVariants } from "@/components/ui/badge"; // Import Badge and variants type
 import { Edit } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { EditTaskForm } from "./EditTaskForm";
 import { cn } from "@/lib/utils";
+import type { VariantProps } from "class-variance-authority"; // Import VariantProps
 
 interface TaskCardProps {
   task: Task;
@@ -19,16 +20,16 @@ interface TaskCardProps {
 }
 
 // Helper function to get badge variant based on priority
-const getPriorityBadgeVariant = (priority: Priority | undefined): "default" | "secondary" | "destructive" => {
+const getPriorityBadgeVariant = (priority: Priority | undefined): VariantProps<typeof badgeVariants>["variant"] => {
     switch (priority) {
         case "High":
-        return "destructive"; // Red for High
+            return "destructive"; // Red for High
         case "Medium":
-        return "secondary"; // Gray for Medium (or default if you prefer)
+            return "warning"; // Yellow for Medium
         case "Low":
-        return "default"; // Default (primary) for Low
+            return "default"; // Default (primary/teal) for Low
         default:
-        return "secondary"; // Default if undefined
+            return "secondary"; // Fallback (gray) if undefined
     }
 };
 
