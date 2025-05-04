@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState } from "react";
-import type { Column, Task } from "@/lib/types";
+import type { Column, Task, Priority } from "@/lib/types"; // Import Priority
 import { TaskCard } from "./TaskCard";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, MoreHorizontal, Pencil } from "lucide-react";
@@ -43,6 +43,13 @@ interface KanbanColumnProps {
   onEditColumn: (columnId: string, newTitle: string, newColor: string) => void;
 }
 
+// Define the order for sorting priorities
+const priorityOrder: Record<Priority, number> = {
+  High: 1,
+  Medium: 2,
+  Low: 3,
+};
+
 export function KanbanColumn({
   column,
   tasks,
@@ -58,6 +65,15 @@ export function KanbanColumn({
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  // Sort tasks by priority
+  const sortedTasks = [...tasks].sort((a, b) => {
+    // Treat undefined priority as Medium for sorting purposes
+    const priorityA = priorityOrder[a.priority || "Medium"];
+    const priorityB = priorityOrder[b.priority || "Medium"];
+    return priorityA - priorityB;
+  });
+
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -214,7 +230,8 @@ export function KanbanColumn({
       </div>
       <ScrollArea className="flex-1 p-4 pt-0">
         <div className="min-h-[200px] pt-4">
-          {tasks.map((task) => (
+           {/* Map over sorted tasks instead of the original tasks prop */}
+          {sortedTasks.map((task) => (
             <TaskCard
               key={task.id}
               task={task}
