@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,16 +24,16 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 
-// Basic HSL format validation (adjust regex as needed for stricter validation)
-const hslColorRegex = /^\d{1,3}\s\d{1,3}%\s\d{1,3}%$/;
+// HEX color format validation (e.g., #RRGGBB or #RGB)
+const hexColorRegex = /^#([0-9a-fA-F]{3}){1,2}$/;
 
 const formSchema = z.object({
   title: z.string().min(1, { message: "Column title is required." }).max(30, {message: "Title cannot exceed 30 characters."}),
-  color: z.string().min(1, { message: "Color is required." }).regex(hslColorRegex, { message: "Use HSL format: e.g., '210 40% 96.1%'"}),
+  color: z.string().min(1, { message: "Color is required." }).regex(hexColorRegex, { message: "Use HEX format: e.g., '#ffffff' or '#fff'"}),
 });
 
 type AddColumnFormProps = {
-  onAddColumn: (title: string, color: string) => void; // Updated signature
+  onAddColumn: (title: string, color: string) => void;
   onClose: () => void;
 };
 
@@ -41,7 +42,7 @@ export function AddColumnForm({ onAddColumn, onClose }: AddColumnFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
-      color: "240 5.9% 90%", // Default to a neutral HSL color
+      color: "#E5E5E5", // Default to a neutral HEX color (Light Gray)
     },
   });
 
@@ -56,7 +57,7 @@ export function AddColumnForm({ onAddColumn, onClose }: AddColumnFormProps) {
       <DialogHeader>
         <DialogTitle>Add New Column</DialogTitle>
         <DialogDescription>
-          Enter a title and choose a background color (HSL format) for the new Kanban column.
+          Enter a title and choose a background color (HEX format) for the new Kanban column.
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>
@@ -79,12 +80,15 @@ export function AddColumnForm({ onAddColumn, onClose }: AddColumnFormProps) {
             name="color"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Background Color (HSL)</FormLabel>
+                <FormLabel>Background Color (HEX)</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., 210 40% 96.1%" {...field} />
+                   <div className="flex items-center gap-2">
+                     <Input type="color" className="w-10 h-10 p-1" value={field.value} onChange={(e) => field.onChange(e.target.value)} />
+                     <Input placeholder="#E5E5E5" {...field} className="flex-1" />
+                   </div>
                 </FormControl>
                  <FormDesc>
-                    Enter color in HSL format (e.g., '210 40% 96.1%'). You can use an online HSL color picker.
+                    Enter color in HEX format (e.g., '#FF5733') or use the color picker.
                  </FormDesc>
                 <FormMessage />
               </FormItem>

@@ -1,3 +1,4 @@
+
 export interface Task {
   id: string;
   title: string;
@@ -8,5 +9,5 @@ export interface Task {
 export interface Column {
   id: string;
   title: string;
-  color: string; // Added color property (e.g., HSL string like "210 40% 96.1%")
+  color: string; // Added color property (e.g., HEX string like "#FFFFFF")
 }

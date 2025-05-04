@@ -1,10 +1,11 @@
+
 import type { Task, Column } from "@/lib/types";
 
-// Using HSL values similar to theme for consistency
+// Using HEX values similar to common UI palettes
 export const initialColumns: Column[] = [
-  { id: "todo", title: "To Do", color: "240 5.9% 90%" }, // Muted Grayish Blue
-  { id: "inprogress", title: "In Progress", color: "48 96.1% 88.8%" }, // Light Yellow
-  { id: "done", title: "Done", color: "142.1 76.2% 81%" }, // Light Green
+  { id: "todo", title: "To Do", color: "#E5E7EB" }, // Tailwind gray-200
+  { id: "inprogress", title: "In Progress", color: "#FEF3C7" }, // Tailwind yellow-100
+  { id: "done", title: "Done", color: "#D1FAE5" }, // Tailwind green-100
 ];
 
 export const initialTasks: Task[] = [

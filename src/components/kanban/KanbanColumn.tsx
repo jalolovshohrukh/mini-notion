@@ -83,15 +83,37 @@ export function KanbanColumn({
      setIsDeleteDialogOpen(false); // Close confirmation dialog
   }
 
-  // Use inline style to set the background color dynamically
+  // Use inline style to set the background color dynamically using the HEX value
   const columnStyle = {
-    backgroundColor: `hsl(${column.color})`,
+    backgroundColor: column.color, // Directly use the HEX color string
   };
 
    // Style for the header to ensure it uses the same background
   const headerStyle = {
-    backgroundColor: `hsl(${column.color})`,
+    backgroundColor: column.color, // Directly use the HEX color string
   };
+
+  // Function to determine if the background color is light or dark
+  // Basic implementation: assumes HEX format #RRGGBB
+  const isLightColor = (hexColor: string): boolean => {
+    try {
+      const hex = hexColor.replace('#', '');
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
+      // Simple luminance calculation (adjust threshold as needed)
+      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      return luminance > 0.6; // Consider colors with luminance > 0.6 as light
+    } catch (e) {
+      console.error("Error determining color brightness, defaulting to dark text:", e);
+      return true; // Default to assuming light background (use dark text) on error
+    }
+  };
+
+  // Determine text color based on background brightness
+  const textColorClass = isLightColor(column.color) ? "text-foreground" : "text-white"; // Use white text on dark backgrounds
+  const iconHoverBgClass = isLightColor(column.color) ? "hover:bg-foreground/10" : "hover:bg-white/10";
+
 
   return (
     <div
@@ -107,18 +129,17 @@ export function KanbanColumn({
     >
       {/* Apply dynamic background color to header as well, ensure sufficient contrast for text */}
       <div
-        className="p-4 border-b border-border/50 flex justify-between items-center sticky top-0 rounded-t-lg z-10"
+        className={cn("p-4 border-b border-border/50 flex justify-between items-center sticky top-0 rounded-t-lg z-10", textColorClass)} // Apply calculated text color
         style={headerStyle} // Apply header background color
       >
-         {/* Use foreground color for better contrast, consider adding dark/light text logic based on column.color lightness */}
-        <h2 className="text-lg font-semibold text-foreground truncate pr-2">
+        <h2 className="text-lg font-semibold truncate pr-2">
           {column.title} ({tasks.length})
         </h2>
         <div className="flex items-center space-x-1">
-           {/* Add Task Dialog Trigger - use foreground for icon */}
+           {/* Add Task Dialog Trigger */}
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-foreground hover:bg-foreground/10">
+              <Button variant="ghost" size="icon" className={cn("h-7 w-7", textColorClass, iconHoverBgClass)}>
                 <Plus className="h-4 w-4" />
                 <span className="sr-only">Add Task</span>
               </Button>
@@ -128,15 +149,16 @@ export function KanbanColumn({
             </DialogContent>
           </Dialog>
 
-           {/* Column Options Dropdown - use foreground for icon */}
+           {/* Column Options Dropdown */}
            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-foreground hover:bg-foreground/10">
+                <Button variant="ghost" size="icon" className={cn("h-7 w-7", textColorClass, iconHoverBgClass)}>
                     <MoreHorizontal className="h-4 w-4" />
                     <span className="sr-only">Column Options</span>
                 </Button>
                 </DropdownMenuTrigger>
+                {/* Adjust Dropdown Content background/text if needed, though default popover style might suffice */}
                 <DropdownMenuContent align="end">
                 {/* Alert Dialog Trigger for Delete */}
                 <AlertDialogTrigger asChild>
@@ -176,15 +198,14 @@ export function KanbanColumn({
             <TaskCard
               key={task.id}
               task={task}
-              // columnId prop is no longer needed for styling TaskCard background
               isDragging={draggingTaskId === task.id}
               onEditTask={onEditTask}
               onDeleteTask={onDeleteTask}
             />
           ))}
            {tasks.length === 0 && !isOver && (
-             // Use muted foreground for better contrast on potentially colored backgrounds
-             <div className="text-center text-muted-foreground/80 p-4 italic">
+             // Adjust muted text based on background
+             <div className={cn("text-center p-4 italic", isLightColor(column.color) ? "text-muted-foreground/80" : "text-white/60")}>
                Drag tasks here or click '+' to add.
              </div>
            )}

@@ -11,6 +11,9 @@ import type { Task, Column } from "@/lib/types";
 import { initialColumns, initialTasks } from "@/lib/initial-data";
 import { generateTaskId, generateColumnId } from "@/lib/utils";
 
+// Basic HEX color format validation (e.g., #RRGGBB or #RGB)
+const hexColorRegex = /^#([0-9a-fA-F]{3}){1,2}$/;
+
 export default function Home() {
   const [columns, setColumns] = useState<Column[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -26,7 +29,7 @@ export default function Home() {
     if (savedColumns) {
         try {
             const parsedColumns = JSON.parse(savedColumns);
-             // Basic validation including the new color property
+             // Basic validation: Check if it's an array and each item has id, title, and a string color (accepts HSL or HEX)
             if (Array.isArray(parsedColumns) && parsedColumns.every(col => col.id && col.title && typeof col.color === 'string')) {
                  setColumns(parsedColumns);
             } else {
@@ -109,7 +112,7 @@ export default function Home() {
     const newColumn: Column = {
       id: generateColumnId(),
       title: title,
-      color: color, // Store the color
+      color: color, // Store the HEX color
     };
     setColumns((prevColumns) => [...prevColumns, newColumn]);
     setIsAddColumnDialogOpen(false);
