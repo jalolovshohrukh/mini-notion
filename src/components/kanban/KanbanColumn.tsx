@@ -86,6 +86,7 @@ export function KanbanColumn({
             <TaskCard
               key={task.id}
               task={task}
+              columnId={column.id} // Pass columnId here
               isDragging={draggingTaskId === task.id}
               onEditTask={onEditTask}
               onDeleteTask={onDeleteTask}
