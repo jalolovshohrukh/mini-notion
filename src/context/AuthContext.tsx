@@ -9,8 +9,8 @@ import {
   signInWithEmailAndPassword,
   signOut,
   User,
-  GoogleAuthProvider, // Import GoogleAuthProvider
-  signInWithPopup, // Import signInWithPopup
+  // GoogleAuthProvider, // Removed GoogleAuthProvider import
+  // signInWithPopup, // Removed signInWithPopup import
 } from 'firebase/auth';
 import { app } from '@/lib/firebase-config'; // Import your Firebase app instance
 
@@ -18,7 +18,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>; // Add Google login function
+  // loginWithGoogle: () => Promise<void>; // Removed Google login function type
   logout: () => Promise<void>;
 }
 
@@ -27,7 +27,7 @@ const defaultAuthContextValue: AuthContextType = {
   user: null,
   loading: true,
   login: async () => { throw new Error('Login function not implemented'); },
-  loginWithGoogle: async () => { throw new Error('loginWithGoogle function not implemented'); }, // Add default for Google login
+  // loginWithGoogle: async () => { throw new Error('loginWithGoogle function not implemented'); }, // Removed default for Google login
   logout: async () => { throw new Error('Logout function not implemented'); },
 };
 
@@ -67,29 +67,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // No need to set loading false here, onAuthStateChanged will do it
   };
 
-  // Function to handle Google Sign-In
-  const loginWithGoogle = async () => {
-    setLoading(true);
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-      // User state will update via onAuthStateChanged
-      // Redirect happens in useEffect based on user state
-    } catch (error: any) {
-      console.error("Google Sign-In Error:", error);
-      // Handle specific errors like popup closed by user
-      if (error.code === 'auth/popup-closed-by-user') {
-          // Handle this case silently or show a specific message
-          console.log("Google Sign-In popup closed by user.");
-      } else {
-         // Throw other errors to be caught by the calling component
-         throw error;
-      }
-    } finally {
-        // Ensure loading is set to false even if popup is closed
-        setLoading(false);
-    }
-  };
+  // // Function to handle Google Sign-In - Removed
+  // const loginWithGoogle = async () => { ... };
 
 
   const logout = async () => {
@@ -105,8 +84,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Loading state will be handled by onAuthStateChanged after logout
   };
 
+  // Removed loginWithGoogle from the provided value
   return (
-    <AuthContext.Provider value={{ user, loading, login, loginWithGoogle, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
