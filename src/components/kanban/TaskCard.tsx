@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from "react";
@@ -37,15 +38,17 @@ export function TaskCard({ task, columnId, isDragging, onEditTask, onDeleteTask 
   return (
     <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
       <Card
+        data-task-id={task.id} // Add data attribute for easier identification
         className={cn(
           "mb-3 cursor-grab transition-opacity duration-300 ease-in-out",
-          isDragging ? "opacity-50 shadow-lg" : "opacity-100 shadow-sm",
+          isDragging ? "opacity-50 shadow-lg scale-105" : "opacity-100 shadow-sm", // Added scale on drag
           "hover:shadow-md relative group",
           cardBackgroundColor() // Apply conditional background color
         )}
         draggable
         onDragStart={(e) => {
           e.dataTransfer.setData("taskId", task.id);
+          e.dataTransfer.effectAllowed = "move"; // Indicate the type of operation allowed
         }}
       >
         <CardHeader className="p-4">
@@ -80,3 +83,4 @@ export function TaskCard({ task, columnId, isDragging, onEditTask, onDeleteTask 
     </Dialog>
   );
 }
+
