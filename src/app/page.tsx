@@ -138,7 +138,7 @@ export default function Home() {
     <main className="flex flex-col h-screen bg-background">
         {/* Header with Title and Add Column Button */}
         <header className="p-4 border-b shrink-0 flex justify-between items-center">
-             <h1 className="text-xl font-semibold text-foreground">TaskFlow Kanban</h1>
+             <h1 className="text-xl font-semibold text-foreground">CITY PARK</h1> {/* Updated title */}
              <Dialog open={isAddColumnDialogOpen} onOpenChange={setIsAddColumnDialogOpen}>
                 <DialogTrigger asChild>
                     <Button>

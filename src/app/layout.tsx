@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster"; // Import Toaster
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "TaskFlow Kanban",
+  title: "CITY PARK", // Updated title
   description: "Manage your tasks with a simple Kanban board.",
 };
 
