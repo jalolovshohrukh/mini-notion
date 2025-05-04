@@ -14,25 +14,43 @@ const firebaseConfig: FirebaseOptions = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID as string,
 };
 
-// Validate environment variables
+// Validate essential environment variables, especially the API key
+if (!firebaseConfig.apiKey) {
+  console.error(
+    'Firebase API Key (NEXT_PUBLIC_FIREBASE_API_KEY) is missing or invalid. Please check your environment variables.'
+  );
+  // Throwing an error here will prevent the app from initializing Firebase incorrectly.
+  throw new Error('Firebase API Key is missing or invalid. Check NEXT_PUBLIC_FIREBASE_API_KEY environment variable.');
+}
+
 if (
-  !firebaseConfig.apiKey ||
   !firebaseConfig.authDomain ||
   !firebaseConfig.projectId ||
-  !firebaseConfig.storageBucket ||
-  !firebaseConfig.messagingSenderId ||
+  // Storage bucket, messaging sender ID, and App ID might be optional depending on usage
+  // !firebaseConfig.storageBucket ||
+  // !firebaseConfig.messagingSenderId ||
   !firebaseConfig.appId
 ) {
-  console.error(
-    'Firebase configuration is incomplete. Check your environment variables.'
+  console.warn(
+    'Some Firebase configuration values (authDomain, projectId, appId) might be missing. Check your environment variables if you encounter issues with specific Firebase services.'
   );
-  // Optionally, throw an error or handle this situation appropriately
-  // throw new Error('Firebase configuration is incomplete.');
 }
 
 
 // Initialize Firebase only if it hasn't been initialized yet
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+let app;
+if (!getApps().length) {
+    try {
+        app = initializeApp(firebaseConfig);
+    } catch (error) {
+        console.error("Failed to initialize Firebase:", error);
+        // Handle initialization error, maybe show a user-friendly message
+        throw new Error("Firebase initialization failed. Please check configuration and environment variables.");
+    }
+} else {
+    app = getApp();
+}
+
 const auth = getAuth(app);
 // const db = getFirestore(app); // Initialize Firestore if needed
 // const storage = getStorage(app); // Initialize Storage if needed
