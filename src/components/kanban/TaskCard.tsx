@@ -63,7 +63,7 @@ export function TaskCard({ task, column, isDragging, onEditTask, onDeleteTask }:
           }}
           // onClick={() => setIsSheetOpen(true)} // Open sheet on click - handled by SheetTrigger
         >
-          <CardHeader className="p-3 space-y-1">
+          <CardHeader className="p-3 space-y-2"> {/* Adjusted spacing */}
             <div className="flex justify-between items-start gap-2">
                 <CardTitle className="text-sm font-medium line-clamp-2">
                   {task.title}
@@ -79,13 +79,17 @@ export function TaskCard({ task, column, isDragging, onEditTask, onDeleteTask }:
                <Badge variant={getPriorityBadgeVariant(task.priority)} className="text-xs px-1.5 py-0.5">
                  {task.priority || "Medium"}
                </Badge>
+                {/* Display Assignee Avatar and Name */}
                 {task.assigneeName && (
-                 <Avatar className="h-6 w-6">
-                     {/* <AvatarImage src="/path/to/avatar.jpg" alt={task.assigneeName} /> */}
-                     <AvatarFallback className="text-xs bg-muted text-muted-foreground">
-                         {getInitials(task.assigneeName)}
-                     </AvatarFallback>
-                 </Avatar>
+                  <div className="flex items-center space-x-1.5"> {/* Reduced space */}
+                     <Avatar className="h-5 w-5"> {/* Made avatar slightly smaller */}
+                         {/* <AvatarImage src="/path/to/avatar.jpg" alt={task.assigneeName} /> */}
+                         <AvatarFallback className="text-[10px] bg-muted text-muted-foreground"> {/* Smaller text */}
+                             {getInitials(task.assigneeName)}
+                         </AvatarFallback>
+                     </Avatar>
+                      <span className="text-xs text-muted-foreground truncate">{task.assigneeName}</span> {/* Show full name */}
+                  </div>
                 )}
              </div>
           </CardHeader>
@@ -103,4 +107,3 @@ export function TaskCard({ task, column, isDragging, onEditTask, onDeleteTask }:
     </Sheet>
   );
 }
-
