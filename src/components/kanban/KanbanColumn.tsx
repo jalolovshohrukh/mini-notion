@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from "react";
@@ -91,8 +92,9 @@ export function KanbanColumn({
   };
 
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    // Only reset if leaving the main column div, not its children
-    if (e.currentTarget === e.target) {
+    // Check if the related target (where the mouse is going) is outside the current column
+    const relatedTarget = e.relatedTarget as Node;
+    if (!e.currentTarget.contains(relatedTarget)) {
         setIsOverTaskZone(false);
         setIsOverColumnZone(false);
     }
@@ -107,10 +109,9 @@ export function KanbanColumn({
     const draggedColId = e.dataTransfer.getData("columnId");
 
     if (taskId && draggingTaskId === taskId) { // Handle task drop
-       // Prevent dropping task back into the same column if it's already there
-        if (!tasks.find(t => t.id === taskId)) {
-            onTaskDrop(column.id, taskId);
-        }
+        // Allow dropping task back into the same column (useful for reordering if implemented)
+        // Or just move it if it comes from another column
+         onTaskDrop(column.id, taskId);
     } else if (draggedColId && draggingColumnId === draggedColId && draggedColId !== column.id) { // Handle column drop
         onColumnDrop(draggedColId, column.id);
     }
@@ -130,54 +131,67 @@ export function KanbanColumn({
   }
 
   const columnStyle = {
-    backgroundColor: column.color,
-    // Add transition for smooth movement
-    transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+    // backgroundColor: column.color, // Base color moved to header/content area for better contrast
+    // Add transition for smooth movement and opacity
+    transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, opacity 0.2s ease-in-out',
     // Add subtle lift effect when dragging the column itself
     transform: draggingColumnId === column.id ? 'scale(1.03)' : 'scale(1)',
-    boxShadow: draggingColumnId === column.id ? '0 10px 20px rgba(0,0,0,0.2)' : 'none',
+    boxShadow: draggingColumnId === column.id ? '0 10px 20px rgba(0,0,0,0.2)' : '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)', // Use default shadow otherwise
+    opacity: draggingColumnId === column.id ? 0.85 : 1, // Make dragged column slightly transparent
+    backgroundColor: 'hsl(var(--card))', // Use card background for the column itself
   };
 
 
   const headerStyle = {
-    backgroundColor: column.color, // Use column color for header too
-    cursor: draggingColumnId === column.id ? 'grabbing' : 'grab', // Indicate draggable header
+    backgroundColor: column.color, // Use column color for header
+    cursor: 'default', // Default cursor, handle provides grab cursor
   };
 
   const isLightColor = (hexColor: string): boolean => {
     try {
       const hex = hexColor.replace('#', '');
       const fullHex = hex.length === 3 ? hex.split('').map(c => c + c).join('') : hex;
-      if (fullHex.length !== 6) return true;
+      if (fullHex.length !== 6) return true; // Default to dark text if format is wrong
 
       const r = parseInt(fullHex.substring(0, 2), 16);
       const g = parseInt(fullHex.substring(2, 4), 16);
       const b = parseInt(fullHex.substring(4, 6), 16);
-      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-      return luminance > 0.6;
+      // Luminance calculation (standard formula)
+      const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+      return luminance > 0.5; // Threshold might need adjustment
     } catch (e) {
       console.error("Error determining color brightness, defaulting to dark text:", e);
-      return true;
+      return true; // Default to dark text on error
     }
   };
 
 
   const textColorClass = isLightColor(column.color) ? "text-foreground" : "text-white";
-  const iconHoverBgClass = isLightColor(column.color) ? "hover:bg-foreground/10" : "hover:bg-white/10";
+  const iconHoverBgClass = isLightColor(column.color) ? "hover:bg-black/10" : "hover:bg-white/20";
 
 
   return (
     <div
       data-column-id={column.id} // Add data attribute for identification
-      draggable={true} // Make the whole column draggable (conditionally handled by drag handle)
+      draggable={true} // Make the whole column draggable, handled by drag handle check in Board
+      onDragStart={(e) => {
+        // This is primarily handled in KanbanBoard's listener now,
+        // but ensure data is set if drag somehow starts here.
+        // Only allow dragging via the handle.
+        const handle = (e.target as HTMLElement).closest('.column-drag-handle');
+        if (!handle) {
+            e.preventDefault(); // Prevent drag if not started on handle
+            return;
+        }
+        e.dataTransfer.setData("columnId", column.id);
+        e.dataTransfer.effectAllowed = "move";
+      }}
       className={cn(
-          "flex flex-col w-72 flex-shrink-0 rounded-lg shadow-inner h-full relative", // Added relative for drop zone positioning
+          "flex flex-col w-72 flex-shrink-0 rounded-lg shadow h-full relative border border-border/50", // Added base shadow and border
            // Visual feedback for being a potential column drop target
-           isOverColumnZone ? "ring-2 ring-offset-2 ring-blue-500" : "",
+           isOverColumnZone ? "ring-2 ring-offset-2 ring-primary" : "",
            // Add opacity if another column is being dragged over this one
-           draggingColumnId && draggingColumnId !== column.id && isOverColumnZone ? "opacity-50" : "opacity-100",
-           // Make transparent if this is the column being dragged
-           draggingColumnId === column.id ? 'opacity-75' : 'opacity-100'
+           draggingColumnId && draggingColumnId !== column.id && isOverColumnZone ? "opacity-50" : "opacity-100"
         )}
       style={columnStyle}
       onDragOver={handleDragOver}
@@ -186,27 +200,37 @@ export function KanbanColumn({
     >
          {/* Column Drop Zone Indicator (shows when another column is dragged over) */}
          {isOverColumnZone && (
-             <div className="absolute inset-0 border-4 border-dashed border-blue-500 rounded-lg pointer-events-none z-20 flex items-center justify-center bg-blue-100/50">
-                <span className="text-blue-600 font-semibold">Move Here</span>
+             <div className="absolute inset-0 border-4 border-dashed border-primary rounded-lg pointer-events-none z-20 flex items-center justify-center bg-primary/10">
+                <span className="text-primary font-semibold">Move Here</span>
              </div>
          )}
 
         {/* Header with Drag Handle */}
         <div
-            className={cn("p-4 border-b border-border/50 flex justify-between items-center sticky top-0 rounded-t-lg z-10", textColorClass)}
+            className={cn("p-3 border-b border-border/50 flex justify-between items-center sticky top-0 rounded-t-lg z-10", textColorClass)}
             style={headerStyle}
         >
              {/* Drag Handle */}
-             <div className={cn("column-drag-handle cursor-grab mr-2", textColorClass, iconHoverBgClass, "p-1 rounded")} title="Drag to reorder column">
-                <GripVertical className="h-5 w-5" />
-             </div>
+             <TooltipProvider>
+               <Tooltip>
+                 <TooltipTrigger asChild>
+                    <div className={cn("column-drag-handle cursor-grab mr-2 rounded p-1", iconHoverBgClass)} title={t('dragHandleTooltip')}>
+                        <GripVertical className="h-5 w-5" />
+                    </div>
+                 </TooltipTrigger>
+                 <TooltipContent>
+                   <p>{t('dragHandleTooltip')}</p>
+                 </TooltipContent>
+               </Tooltip>
+             </TooltipProvider>
 
-            <h2 className="text-lg font-semibold truncate pr-1 flex-grow">
+
+            <h2 className="text-base font-semibold truncate pr-1 flex-grow">
               {column.title}
             </h2>
 
             {/* Action Buttons */}
-            <div className="flex items-center space-x-1 ml-1">
+            <div className="flex items-center space-x-0.5 ml-1">
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
@@ -286,12 +310,12 @@ export function KanbanColumn({
         </div>
 
       {/* Task Area */}
-      <ScrollArea className="flex-1 p-4 pt-0">
+      <ScrollArea className="flex-1 p-4 pt-0 bg-inherit rounded-b-lg"> {/* Use inherited background */}
         <div
             className={cn(
                 "min-h-[200px] pt-4 transition-colors duration-200",
                  // Visual feedback for being a potential task drop target
-                isOverTaskZone && draggingTaskId ? "bg-primary/10 rounded-b-lg" : ""
+                isOverTaskZone && draggingTaskId ? "bg-primary/10 rounded-lg" : "" // Apply to inner div
             )}
         >
           {sortedTasks.map((task) => (
@@ -305,7 +329,7 @@ export function KanbanColumn({
             />
           ))}
            {tasks.length === 0 && !isOverTaskZone && !isOverColumnZone && (
-             <div className={cn("text-center p-4 italic", isLightColor(column.color) ? "text-muted-foreground/80" : "text-white/60")}>
+             <div className={cn("text-center p-4 italic text-muted-foreground/80")}>
                {t('emptyState')}
              </div>
            )}

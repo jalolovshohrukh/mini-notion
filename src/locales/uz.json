@@ -1,3 +1,4 @@
+
 {
   "login.title": "Kirish",
   "login.description": "Hisobingizga kirish uchun quyida elektron pochtangizni kiriting.",
@@ -19,6 +20,7 @@
 
   "column.addTaskTooltip": "Vazifa qo'shish",
   "column.optionsTooltip": "Ustun sozlamalari",
+  "column.dragHandleTooltip": "Ustun tartibini o'zgartirish uchun sudrang",
   "column.editOption": "Ustunni tahrirlash",
   "column.deleteOption": "Ustunni o'chirish",
   "column.deleteConfirmTitle": "Haqiqatan ham ishonchingiz komilmi?",

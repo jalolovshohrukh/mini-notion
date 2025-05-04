@@ -1,3 +1,4 @@
+
 {
   "login.title": "Login",
   "login.description": "Enter your email below to login to your account.",
@@ -19,6 +20,7 @@
 
   "column.addTaskTooltip": "Add Task",
   "column.optionsTooltip": "Column Options",
+  "column.dragHandleTooltip": "Drag to reorder column",
   "column.editOption": "Edit Column",
   "column.deleteOption": "Delete Column",
   "column.deleteConfirmTitle": "Are you absolutely sure?",

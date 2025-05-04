@@ -1,3 +1,4 @@
+
 {
   "login.title": "Вход",
   "login.description": "Введите свой email ниже, чтобы войти в свой аккаунт.",
@@ -19,6 +20,7 @@
 
   "column.addTaskTooltip": "Добавить задачу",
   "column.optionsTooltip": "Опции колонки",
+  "column.dragHandleTooltip": "Перетащите для изменения порядка колонки",
   "column.editOption": "Редактировать колонку",
   "column.deleteOption": "Удалить колонку",
   "column.deleteConfirmTitle": "Вы абсолютно уверены?",
