@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from "react";
@@ -9,10 +8,12 @@ import { Badge, badgeVariants } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import { TaskDetailSheet } from "./TaskDetailSheet";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, User } from "lucide-react"; // Added User icon
 import { cn } from "@/lib/utils";
 import type { VariantProps } from "class-variance-authority";
 import { useScopedI18n } from '@/i18n/client'; // Import i18n hook
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"; // Import Tooltip
+
 
 interface TaskCardProps {
   task: Task;
@@ -76,17 +77,18 @@ export function TaskCard({ task, column, isDragging, onEditTask, onDeleteTask }:
     <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
       <SheetTrigger asChild>
         <Card
-          data-task-id={task.id}
+          data-task-id={task.id} // Keep this for identifying the task during drag
           className={cn(
             "mb-3 cursor-pointer transition-opacity duration-300 ease-in-out",
             "bg-card text-card-foreground",
             isDragging ? "opacity-50 shadow-lg scale-105" : "opacity-100 shadow-sm",
             "hover:shadow-md relative group"
           )}
-          draggable
+          // draggable attribute is managed by the parent KanbanColumn via the handle now
           onDragStart={(e) => {
-            e.dataTransfer.setData("taskId", task.id);
-            e.dataTransfer.effectAllowed = "move";
+              // This event might still fire if not prevented, ensure data is set
+              e.dataTransfer.setData("taskId", task.id);
+              e.dataTransfer.effectAllowed = "move";
           }}
         >
           <CardHeader className="p-3 space-y-2">
@@ -122,17 +124,34 @@ export function TaskCard({ task, column, isDragging, onEditTask, onDeleteTask }:
                     )}
                 </div>
 
-                {task.assigneeName && (
-                  <div className="flex items-center space-x-1 flex-shrink-0 ml-2">
-                     <Avatar className="h-5 w-5">
-                         <AvatarFallback className="text-[10px] bg-muted text-muted-foreground">
-                             {getInitials(task.assigneeName)}
-                         </AvatarFallback>
-                     </Avatar>
-                      {/* Optionally display translated name here or in tooltip */}
-                      {/* <span className="text-xs text-muted-foreground truncate">{getTranslatedAssigneeName(task.assigneeName)}</span> */}
-                  </div>
-                )}
+                 {/* Assignee Display */}
+                 <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                             <div className={cn(
+                                "flex items-center space-x-1 flex-shrink-0 ml-2",
+                                task.assigneeName ? "opacity-100" : "opacity-50" // Dim if unassigned
+                             )}>
+                                <Avatar className="h-5 w-5">
+                                     {task.assigneeName ? (
+                                        <AvatarFallback className="text-[10px] bg-muted text-muted-foreground">
+                                            {getInitials(task.assigneeName)}
+                                        </AvatarFallback>
+                                    ) : (
+                                        <AvatarFallback className="text-[10px] bg-muted text-muted-foreground border border-dashed">
+                                            <User className="h-3 w-3" />
+                                        </AvatarFallback>
+                                    )}
+                                </Avatar>
+                                {/* Optional: Show name next to avatar if space allows */}
+                                {/* <span className="text-xs text-muted-foreground truncate hidden sm:inline">{getTranslatedAssigneeName(task.assigneeName) || 'Unassigned'}</span> */}
+                             </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>{task.assigneeName ? getTranslatedAssigneeName(task.assigneeName) : tAssignee('unassigned' as keyof typeof tAssignee.messages, {defaultValue: 'Unassigned'})}</p>
+                        </TooltipContent>
+                    </Tooltip>
+                 </TooltipProvider>
              </div>
           </CardHeader>
         </Card>

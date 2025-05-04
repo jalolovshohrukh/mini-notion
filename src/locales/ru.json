@@ -102,6 +102,7 @@
   "assignee.Madina": "Мадина",
   "assignee.Lobar": "Лобар",
   "assignee.Somon": "Сомон",
+  "assignee.unassigned": "Не назначен",
 
   "metadata.title": "CITY PARK",
   "metadata.description": "Управляйте своими задачами с помощью простой доски Kanban."

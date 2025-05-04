@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useContext } from "react";
@@ -122,13 +121,35 @@ export default function HomePage() { // Renamed component
     }
   }, [columns, isClient, user]);
 
-  const handleDrop = (columnId: string, taskId: string) => {
+  const handleTaskDrop = (columnId: string, taskId: string) => {
      if (!isClient || !user) return;
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
         task.id === taskId ? { ...task, columnId: columnId } : task
       )
     );
+  };
+
+  const handleColumnDrop = (draggedColumnId: string, targetColumnId: string) => {
+    if (!isClient || !user || draggedColumnId === targetColumnId) return;
+
+    setColumns((prevColumns) => {
+      const draggedIndex = prevColumns.findIndex((col) => col.id === draggedColumnId);
+      const targetIndex = prevColumns.findIndex((col) => col.id === targetColumnId);
+
+      if (draggedIndex === -1 || targetIndex === -1) {
+        return prevColumns; // Should not happen if IDs are correct
+      }
+
+      const newColumns = [...prevColumns];
+      const [draggedColumn] = newColumns.splice(draggedIndex, 1);
+
+      // Adjust target index if the dragged item was before the target
+      const adjustedTargetIndex = draggedIndex < targetIndex ? targetIndex -1 : targetIndex;
+
+      newColumns.splice(adjustedTargetIndex, 0, draggedColumn);
+      return newColumns;
+    });
   };
 
   const handleAddTask = (columnId: string, newTaskData: Omit<Task, "id" | "columnId">) => {
@@ -236,7 +257,8 @@ export default function HomePage() { // Renamed component
             <KanbanBoard
                 columns={columns}
                 tasks={tasks}
-                onDrop={handleDrop}
+                onTaskDrop={handleTaskDrop}
+                onColumnDrop={handleColumnDrop}
                 onAddTask={handleAddTask}
                 onEditTask={handleEditTask}
                 onDeleteTask={handleDeleteTask}
