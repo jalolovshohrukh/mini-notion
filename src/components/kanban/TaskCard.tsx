@@ -12,28 +12,18 @@ import { cn } from "@/lib/utils";
 
 interface TaskCardProps {
   task: Task;
-  columnId: string; // Added columnId prop
+  // columnId is removed as it's no longer used for styling here
   isDragging: boolean;
   onEditTask: (taskId: string, updatedTask: Omit<Task, "id" | "columnId">) => void;
   onDeleteTask: (taskId: string) => void;
 }
 
-export function TaskCard({ task, columnId, isDragging, onEditTask, onDeleteTask }: TaskCardProps) {
+export function TaskCard({ task, isDragging, onEditTask, onDeleteTask }: TaskCardProps) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const handleEditDialogClose = () => setIsEditDialogOpen(false);
 
-  // Determine background color based on columnId
-  const cardBackgroundColor = () => {
-    switch (columnId) {
-      case "done":
-        return "bg-green-100 dark:bg-green-900/30"; // Light green for done
-      case "inprogress":
-        return "bg-yellow-100 dark:bg-yellow-900/30"; // Light yellow for in progress
-      default:
-        return "bg-card text-card-foreground"; // Default card background
-    }
-  };
+  // Remove the cardBackgroundColor function, cards will use the default theme background
 
   return (
     <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -41,9 +31,10 @@ export function TaskCard({ task, columnId, isDragging, onEditTask, onDeleteTask 
         data-task-id={task.id} // Add data attribute for easier identification
         className={cn(
           "mb-3 cursor-grab transition-opacity duration-300 ease-in-out",
+          "bg-card text-card-foreground", // Explicitly use card background/foreground from theme
           isDragging ? "opacity-50 shadow-lg scale-105" : "opacity-100 shadow-sm", // Added scale on drag
-          "hover:shadow-md relative group",
-          cardBackgroundColor() // Apply conditional background color
+          "hover:shadow-md relative group"
+          // Removed conditional background color class application
         )}
         draggable
         onDragStart={(e) => {
@@ -83,4 +74,3 @@ export function TaskCard({ task, columnId, isDragging, onEditTask, onDeleteTask 
     </Dialog>
   );
 }
-

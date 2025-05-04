@@ -26,11 +26,11 @@ export default function Home() {
     if (savedColumns) {
         try {
             const parsedColumns = JSON.parse(savedColumns);
-             // Basic validation
-            if (Array.isArray(parsedColumns) && parsedColumns.every(col => col.id && col.title)) {
+             // Basic validation including the new color property
+            if (Array.isArray(parsedColumns) && parsedColumns.every(col => col.id && col.title && typeof col.color === 'string')) {
                  setColumns(parsedColumns);
             } else {
-                console.warn("Invalid columns data found in localStorage, using initial data.");
+                console.warn("Invalid or outdated columns data found in localStorage, using initial data.");
                 setColumns(initialColumns);
             }
         } catch (error) {
@@ -104,11 +104,12 @@ export default function Home() {
     setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
   };
 
-   const handleAddColumn = (title: string) => {
+   const handleAddColumn = (title: string, color: string) => {
     if (!isClient) return;
     const newColumn: Column = {
       id: generateColumnId(),
       title: title,
+      color: color, // Store the color
     };
     setColumns((prevColumns) => [...prevColumns, newColumn]);
     setIsAddColumnDialogOpen(false);

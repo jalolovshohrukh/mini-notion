@@ -1,9 +1,10 @@
 import type { Task, Column } from "@/lib/types";
 
+// Using HSL values similar to theme for consistency
 export const initialColumns: Column[] = [
-  { id: "todo", title: "To Do" },
-  { id: "inprogress", title: "In Progress" },
-  { id: "done", title: "Done" },
+  { id: "todo", title: "To Do", color: "240 5.9% 90%" }, // Muted Grayish Blue
+  { id: "inprogress", title: "In Progress", color: "48 96.1% 88.8%" }, // Light Yellow
+  { id: "done", title: "Done", color: "142.1 76.2% 81%" }, // Light Green
 ];
 
 export const initialTasks: Task[] = [

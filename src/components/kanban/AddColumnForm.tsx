@@ -12,6 +12,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription as FormDesc // Renamed to avoid conflict
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,12 +23,16 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 
+// Basic HSL format validation (adjust regex as needed for stricter validation)
+const hslColorRegex = /^\d{1,3}\s\d{1,3}%\s\d{1,3}%$/;
+
 const formSchema = z.object({
   title: z.string().min(1, { message: "Column title is required." }).max(30, {message: "Title cannot exceed 30 characters."}),
+  color: z.string().min(1, { message: "Color is required." }).regex(hslColorRegex, { message: "Use HSL format: e.g., '210 40% 96.1%'"}),
 });
 
 type AddColumnFormProps = {
-  onAddColumn: (title: string) => void;
+  onAddColumn: (title: string, color: string) => void; // Updated signature
   onClose: () => void;
 };
 
@@ -36,11 +41,12 @@ export function AddColumnForm({ onAddColumn, onClose }: AddColumnFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
+      color: "240 5.9% 90%", // Default to a neutral HSL color
     },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    onAddColumn(values.title);
+    onAddColumn(values.title, values.color); // Pass color
     form.reset();
     onClose(); // Close dialog on successful submit
   }
@@ -50,7 +56,7 @@ export function AddColumnForm({ onAddColumn, onClose }: AddColumnFormProps) {
       <DialogHeader>
         <DialogTitle>Add New Column</DialogTitle>
         <DialogDescription>
-          Enter a title for the new Kanban column.
+          Enter a title and choose a background color (HSL format) for the new Kanban column.
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>
@@ -64,6 +70,22 @@ export function AddColumnForm({ onAddColumn, onClose }: AddColumnFormProps) {
                 <FormControl>
                   <Input placeholder="e.g., Under Review" {...field} />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+           <FormField
+            control={form.control}
+            name="color"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Background Color (HSL)</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g., 210 40% 96.1%" {...field} />
+                </FormControl>
+                 <FormDesc>
+                    Enter color in HSL format (e.g., '210 40% 96.1%'). You can use an online HSL color picker.
+                 </FormDesc>
                 <FormMessage />
               </FormItem>
             )}

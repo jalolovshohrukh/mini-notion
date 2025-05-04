@@ -26,6 +26,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils"; // Import cn utility
+
 
 interface KanbanColumnProps {
   column: Column;
@@ -81,25 +83,42 @@ export function KanbanColumn({
      setIsDeleteDialogOpen(false); // Close confirmation dialog
   }
 
+  // Use inline style to set the background color dynamically
+  const columnStyle = {
+    backgroundColor: `hsl(${column.color})`,
+  };
+
+   // Style for the header to ensure it uses the same background
+  const headerStyle = {
+    backgroundColor: `hsl(${column.color})`,
+  };
+
   return (
     <div
       // Set fixed width for columns, ensure they don't shrink
-      className={`flex flex-col w-72 flex-shrink-0 bg-secondary rounded-lg shadow-inner h-full transition-colors duration-200 ${
-        isOver ? "bg-accent/20" : ""
-      }`}
+      className={cn(
+          "flex flex-col w-72 flex-shrink-0 rounded-lg shadow-inner h-full transition-colors duration-200",
+          isOver ? "ring-2 ring-primary ring-offset-2" : "" // Indicate drop target with ring
+        )}
+      style={columnStyle} // Apply dynamic background color
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <div className="p-4 border-b border-border flex justify-between items-center sticky top-0 bg-secondary rounded-t-lg z-10">
-        <h2 className="text-lg font-semibold text-secondary-foreground truncate pr-2">
+      {/* Apply dynamic background color to header as well, ensure sufficient contrast for text */}
+      <div
+        className="p-4 border-b border-border/50 flex justify-between items-center sticky top-0 rounded-t-lg z-10"
+        style={headerStyle} // Apply header background color
+      >
+         {/* Use foreground color for better contrast, consider adding dark/light text logic based on column.color lightness */}
+        <h2 className="text-lg font-semibold text-foreground truncate pr-2">
           {column.title} ({tasks.length})
         </h2>
         <div className="flex items-center space-x-1">
-           {/* Add Task Dialog Trigger */}
+           {/* Add Task Dialog Trigger - use foreground for icon */}
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7">
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-foreground hover:bg-foreground/10">
                 <Plus className="h-4 w-4" />
                 <span className="sr-only">Add Task</span>
               </Button>
@@ -109,11 +128,11 @@ export function KanbanColumn({
             </DialogContent>
           </Dialog>
 
-           {/* Column Options Dropdown */}
+           {/* Column Options Dropdown - use foreground for icon */}
            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-7 w-7">
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-foreground hover:bg-foreground/10">
                     <MoreHorizontal className="h-4 w-4" />
                     <span className="sr-only">Column Options</span>
                 </Button>
@@ -121,6 +140,7 @@ export function KanbanColumn({
                 <DropdownMenuContent align="end">
                 {/* Alert Dialog Trigger for Delete */}
                 <AlertDialogTrigger asChild>
+                     {/* Destructive text color should work against most backgrounds */}
                     <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer">
                         <Trash2 className="mr-2 h-4 w-4" />
                         <span>Delete Column</span>
@@ -156,15 +176,16 @@ export function KanbanColumn({
             <TaskCard
               key={task.id}
               task={task}
-              columnId={column.id}
+              // columnId prop is no longer needed for styling TaskCard background
               isDragging={draggingTaskId === task.id}
               onEditTask={onEditTask}
               onDeleteTask={onDeleteTask}
             />
           ))}
            {tasks.length === 0 && !isOver && (
-             <div className="text-center text-muted-foreground p-4 italic">
-               No tasks yet.
+             // Use muted foreground for better contrast on potentially colored backgrounds
+             <div className="text-center text-muted-foreground/80 p-4 italic">
+               Drag tasks here or click '+' to add.
              </div>
            )}
            {isOver && (
@@ -177,4 +198,3 @@ export function KanbanColumn({
     </div>
   );
 }
-
