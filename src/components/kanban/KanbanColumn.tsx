@@ -81,40 +81,49 @@ export function KanbanColumn({
 
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
+    e.preventDefault(); // Necessary to allow dropping
+    e.dataTransfer.dropEffect = "move"; // Indicate it's a move operation
+
     if (draggingTaskId) {
       setIsOverTaskZone(true);
       setIsOverColumnZone(false); // Don't show column drop zone when dragging task
     } else if (draggingColumnId && draggingColumnId !== column.id) {
       setIsOverColumnZone(true);
       setIsOverTaskZone(false); // Don't show task drop zone when dragging column
+    } else {
+      // If dragging something not recognized (or the column itself over itself)
+      setIsOverTaskZone(false);
+      setIsOverColumnZone(false);
     }
   };
 
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    // Check if the related target (where the mouse is going) is outside the current column
-    const relatedTarget = e.relatedTarget as Node;
-    if (!e.currentTarget.contains(relatedTarget)) {
-        setIsOverTaskZone(false);
-        setIsOverColumnZone(false);
-    }
+    // Basic leave clears indicators
+    setIsOverTaskZone(false);
+    setIsOverColumnZone(false);
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    setIsOverTaskZone(false);
-    setIsOverColumnZone(false);
-
     const taskId = e.dataTransfer.getData("taskId");
     const draggedColId = e.dataTransfer.getData("columnId");
 
+    // console.log("Drop Event:", { taskId, draggedColId, currentColumnId: column.id, draggingTaskId, draggingColumnId });
+
+
     if (taskId && draggingTaskId === taskId) { // Handle task drop
-        // Allow dropping task back into the same column (useful for reordering if implemented)
-        // Or just move it if it comes from another column
-         onTaskDrop(column.id, taskId);
+        // console.log(`Dropping Task ${taskId} onto Column ${column.id}`);
+        onTaskDrop(column.id, taskId);
     } else if (draggedColId && draggingColumnId === draggedColId && draggedColId !== column.id) { // Handle column drop
+        // console.log(`Dropping Column ${draggedColId} onto Column ${column.id}`);
         onColumnDrop(draggedColId, column.id);
+    } else {
+        // console.log("Drop ignored - Mismatched data or self-drop");
     }
+
+    // Clear visual indicators regardless of drop success
+    setIsOverTaskZone(false);
+    setIsOverColumnZone(false);
   };
 
 
@@ -131,7 +140,6 @@ export function KanbanColumn({
   }
 
   const columnStyle = {
-    // backgroundColor: column.color, // Base color moved to header/content area for better contrast
     // Add transition for smooth movement and opacity
     transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, opacity 0.2s ease-in-out',
     // Add subtle lift effect when dragging the column itself
@@ -173,18 +181,16 @@ export function KanbanColumn({
   return (
     <div
       data-column-id={column.id} // Add data attribute for identification
-      draggable={true} // Make the whole column draggable, handled by drag handle check in Board
+      draggable={true} // Make the whole column draggable, drag start logic is handled in KanbanBoard listener
       onDragStart={(e) => {
-        // This is primarily handled in KanbanBoard's listener now,
-        // but ensure data is set if drag somehow starts here.
-        // Only allow dragging via the handle.
+        // This is primarily handled in KanbanBoard's listener now.
+        // We only need to ensure the drag doesn't start if NOT on the handle.
         const handle = (e.target as HTMLElement).closest('.column-drag-handle');
         if (!handle) {
             e.preventDefault(); // Prevent drag if not started on handle
             return;
         }
-        e.dataTransfer.setData("columnId", column.id);
-        e.dataTransfer.effectAllowed = "move";
+        // Data setting is done in the board's listener.
       }}
       className={cn(
           "flex flex-col w-72 flex-shrink-0 rounded-lg shadow h-full relative border border-border/50", // Added base shadow and border
@@ -201,7 +207,7 @@ export function KanbanColumn({
          {/* Column Drop Zone Indicator (shows when another column is dragged over) */}
          {isOverColumnZone && (
              <div className="absolute inset-0 border-4 border-dashed border-primary rounded-lg pointer-events-none z-20 flex items-center justify-center bg-primary/10">
-                <span className="text-primary font-semibold">Move Here</span>
+                <span className="text-primary font-semibold">{t('dropZone')}</span>
              </div>
          )}
 
@@ -214,8 +220,9 @@ export function KanbanColumn({
              <TooltipProvider>
                <Tooltip>
                  <TooltipTrigger asChild>
-                    <div className={cn("column-drag-handle cursor-grab mr-2 rounded p-1", iconHoverBgClass)} title={t('dragHandleTooltip')}>
-                        <GripVertical className="h-5 w-5" />
+                    {/* The div ITSELF is the handle */}
+                    <div draggable={true} className={cn("column-drag-handle cursor-grab mr-2 rounded p-1", iconHoverBgClass)} title={t('dragHandleTooltip')}>
+                        <GripVertical className="h-5 w-5 pointer-events-none" /> {/* Make icon non-interactive */}
                     </div>
                  </TooltipTrigger>
                  <TooltipContent>
@@ -317,6 +324,7 @@ export function KanbanColumn({
                  // Visual feedback for being a potential task drop target
                 isOverTaskZone && draggingTaskId ? "bg-primary/10 rounded-lg" : "" // Apply to inner div
             )}
+            // Removed drag handlers from here as they are on the parent column div
         >
           {sortedTasks.map((task) => (
             <TaskCard
@@ -335,7 +343,7 @@ export function KanbanColumn({
            )}
             {/* Task Drop Zone Indicator */}
            {isOverTaskZone && draggingTaskId && (
-             <div className="h-16 border-2 border-dashed border-primary/50 rounded-md bg-primary/10 flex items-center justify-center text-primary font-medium mt-2">
+             <div className="h-16 border-2 border-dashed border-primary/50 rounded-md bg-primary/10 flex items-center justify-center text-primary font-medium mt-2 pointer-events-none">
                {t('dropZone')}
              </div>
            )}

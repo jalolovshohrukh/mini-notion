@@ -37,51 +37,59 @@ export function KanbanBoard({
       const target = event.target as HTMLElement;
       const cardElement = target.closest('[data-task-id]');
       const columnElement = target.closest('[data-column-id]');
-      const dragHandle = target.closest('.column-drag-handle'); // Check for the drag handle
+      const dragHandle = target.closest('.column-drag-handle'); // Check if drag started on the handle
 
-      if (cardElement && event.dataTransfer) {
+      // Ensure dataTransfer is available
+      if (!event.dataTransfer) return;
+
+      if (cardElement && !dragHandle) { // Check it's a task card AND not the column handle itself
          // Dragging a task card
-         event.dataTransfer.effectAllowed = 'move';
          const taskId = cardElement.getAttribute('data-task-id');
          if (taskId) {
               event.dataTransfer.setData("taskId", taskId);
+              event.dataTransfer.effectAllowed = 'move';
               setDraggingTaskId(taskId);
+              setDraggingColumnId(null); // Ensure column dragging state is cleared
+              // console.log('Dragging Task:', taskId);
          }
-         setDraggingColumnId(null); // Not dragging a column
-      } else if (columnElement && dragHandle && event.dataTransfer) {
+      } else if (columnElement && dragHandle) {
          // Dragging a column VIA its handle
-         event.dataTransfer.effectAllowed = 'move';
          const columnId = columnElement.getAttribute('data-column-id');
          if (columnId) {
              event.dataTransfer.setData("columnId", columnId);
+             event.dataTransfer.effectAllowed = 'move';
              setDraggingColumnId(columnId);
+             setDraggingTaskId(null); // Ensure task dragging state is cleared
+             // console.log('Dragging Column:', columnId);
          }
-         setDraggingTaskId(null); // Not dragging a task
-      } else if (columnElement && !dragHandle && event.dataTransfer) {
-          // Attempting to drag column without handle - prevent it
-          event.preventDefault();
-          event.stopPropagation(); // Stop bubbling further
+      } else {
+          // If drag started on something else (like column body without handle), prevent it.
+          // event.preventDefault(); // Prevent default sometimes stops necessary drag actions
+          // event.stopPropagation();
           setDraggingColumnId(null);
           setDraggingTaskId(null);
+          // console.log('Drag prevented on:', target);
       }
     };
 
     const handleDragEnd = () => {
+      // console.log('Drag End');
       setDraggingTaskId(null);
       setDraggingColumnId(null); // Clear both on drag end
     };
 
-    const boardElement = document.getElementById('kanban-board-container'); // Assuming you add this ID
+    // Use a more specific container if possible, but document works
+    const boardContainer = document.getElementById('kanban-board-container');
 
-    if (boardElement) {
+    if (boardContainer) {
         // Use capture phase for dragstart to potentially intercept early if needed,
         // though standard bubbling should work with the handle check.
-        boardElement.addEventListener("dragstart", handleDragStart, false);
+        boardContainer.addEventListener("dragstart", handleDragStart);
         // Dragend can be on the document as it fires on the source element
         document.addEventListener("dragend", handleDragEnd);
 
         return () => {
-          boardElement.removeEventListener("dragstart", handleDragStart, false);
+          boardContainer.removeEventListener("dragstart", handleDragStart);
           document.removeEventListener("dragend", handleDragEnd);
         };
     }

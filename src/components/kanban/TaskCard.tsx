@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from "react";
@@ -78,18 +79,20 @@ export function TaskCard({ task, column, isDragging, onEditTask, onDeleteTask }:
       <SheetTrigger asChild>
         <Card
           data-task-id={task.id} // Keep this for identifying the task during drag
+          draggable={true} // Explicitly make the card draggable
+          onDragStart={(e) => {
+              // This event MUST set the data for the drag to be identified correctly
+              e.dataTransfer.setData("taskId", task.id);
+              e.dataTransfer.effectAllowed = "move";
+              // console.log(`TaskCard Drag Start: ${task.id}`);
+          }}
           className={cn(
             "mb-3 cursor-pointer transition-opacity duration-300 ease-in-out",
             "bg-card text-card-foreground",
             isDragging ? "opacity-50 shadow-lg scale-105" : "opacity-100 shadow-sm",
             "hover:shadow-md relative group"
           )}
-          // draggable attribute is managed by the parent KanbanColumn via the handle now
-          onDragStart={(e) => {
-              // This event might still fire if not prevented, ensure data is set
-              e.dataTransfer.setData("taskId", task.id);
-              e.dataTransfer.effectAllowed = "move";
-          }}
+
         >
           <CardHeader className="p-3 space-y-2">
             <div className="flex justify-between items-start gap-2">
