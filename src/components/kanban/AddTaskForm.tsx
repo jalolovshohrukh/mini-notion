@@ -1,12 +1,13 @@
 
 "use client";
 
-import React, { useState } from "react"; // Import useState
+import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { format, formatISO } from "date-fns"; // Import date-fns functions
-import { Calendar as CalendarIcon } from "lucide-react"; // Import Calendar icon
+import { format, formatISO } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { useScopedI18n, useI18n } from '@/i18n/client'; // Import i18n hooks
 
 import { Button } from "@/components/ui/button";
 import {
@@ -30,8 +31,8 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"; // Import Popover
-import { Calendar } from "@/components/ui/calendar"; // Import Calendar
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import {
   DialogHeader,
   DialogTitle,
@@ -40,11 +41,11 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import type { Task, Priority } from "@/lib/types";
-import { cn } from "@/lib/utils"; // Import cn utility
+import { cn } from "@/lib/utils";
 
 const priorities: Priority[] = ["High", "Medium", "Low"];
 
-// Updated mock user data
+// Updated mock user data - Consider how to handle user data localization if needed
 const mockUsers = [
   { id: "user-1", name: "Ilhom" },
   { id: "user-2", name: "Parvina" },
@@ -53,13 +54,15 @@ const mockUsers = [
   { id: "user-5", name: "Somon" },
 ];
 
-const formSchema = z.object({
-  title: z.string().min(1, { message: "Title is required." }).max(50),
+// Define schema using translated error messages
+const getFormSchema = (t: ReturnType<typeof useScopedI18n>) => z.object({
+  title: z.string().min(1, { message: t('error.titleRequired') }).max(50),
   description: z.string().max(200).optional(),
   priority: z.enum(priorities).default("Medium"),
-  assigneeId: z.string().optional(), // Add assigneeId field (optional)
-  dueDate: z.date().optional(), // Add dueDate field (optional, using JS Date for picker)
+  assigneeId: z.string().optional(),
+  dueDate: z.date().optional(),
 });
+
 
 type AddTaskFormProps = {
   columnId: string;
@@ -67,44 +70,55 @@ type AddTaskFormProps = {
   onClose: () => void;
 };
 
-// Use a non-empty string for the "unassigned" value
 const UNASSIGNED_VALUE = "none";
 
 export function AddTaskForm({ columnId, onAddTask, onClose }: AddTaskFormProps) {
+  const t = useScopedI18n('addTaskForm'); // Scope translations
+  const tPriority = useScopedI18n('priority'); // Scope for priority translations
+  const tAssignee = useScopedI18n('assignee'); // Scope for assignee translations
+  const formSchema = getFormSchema(t); // Get schema with translations
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
       description: "",
       priority: "Medium",
-      assigneeId: UNASSIGNED_VALUE, // Default assignee to unassigned value
-      dueDate: undefined, // Default due date to undefined
+      assigneeId: UNASSIGNED_VALUE,
+      dueDate: undefined,
     },
   });
 
+   // Get translated assignee name
+   const getTranslatedAssigneeName = (id?: string) => {
+    if (!id || id === UNASSIGNED_VALUE) return undefined;
+    // Assuming assignee names are keys like 'assignee.Ilhom'
+    const user = mockUsers.find(u => u.id === id);
+    return user ? tAssignee(user.name as keyof typeof tAssignee.messages) : undefined;
+  }
+
+
   function onSubmit(values: z.infer<typeof formSchema>) {
     const isAssigned = values.assigneeId && values.assigneeId !== UNASSIGNED_VALUE;
-    const selectedUser = isAssigned ? mockUsers.find(user => user.id === values.assigneeId) : undefined;
+    // Get original name for data storage, translated name for display elsewhere if needed
+    const originalAssigneeName = isAssigned ? mockUsers.find(user => user.id === values.assigneeId)?.name : undefined;
     onAddTask({
       title: values.title,
       description: values.description || undefined,
       priority: values.priority,
-      assigneeId: isAssigned ? values.assigneeId : undefined, // Pass assigneeId only if assigned
-      assigneeName: selectedUser?.name || undefined, // Pass assigneeName only if assigned
-      // Format dueDate to ISO string if it exists, otherwise pass undefined
+      assigneeId: isAssigned ? values.assigneeId : undefined,
+      assigneeName: originalAssigneeName, // Store original name
       dueDate: values.dueDate ? formatISO(values.dueDate, { representation: 'date' }) : undefined,
     });
     form.reset();
-    onClose(); // Close dialog on successful submit
+    onClose();
   }
 
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Add New Task</DialogTitle>
-        <DialogDescription>
-          Enter the details for your new task.
-        </DialogDescription>
+        <DialogTitle>{t('title')}</DialogTitle>
+        <DialogDescription>{t('description')}</DialogDescription>
       </DialogHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
@@ -113,9 +127,9 @@ export function AddTaskForm({ columnId, onAddTask, onClose }: AddTaskFormProps) 
             name="title"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Title</FormLabel>
+                <FormLabel>{t('taskTitleLabel')}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Task title" {...field} />
+                  <Input placeholder={t('taskTitlePlaceholder')} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -126,31 +140,32 @@ export function AddTaskForm({ columnId, onAddTask, onClose }: AddTaskFormProps) 
             name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Description (Optional)</FormLabel>
+                <FormLabel>{t('descriptionLabel')}</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Task description" {...field} />
+                  <Textarea placeholder={t('descriptionPlaceholder')} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4"> {/* Grid for Priority and Due Date */}
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="priority"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Priority</FormLabel>
+                    <FormLabel>{t('priorityLabel')}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select priority" />
+                          <SelectValue placeholder={t('priorityPlaceholder')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {priorities.map((priority) => (
                           <SelectItem key={priority} value={priority}>
-                            {priority}
+                            {/* Translate priority names */}
+                            {tPriority(priority as keyof typeof tPriority.messages)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -159,13 +174,12 @@ export function AddTaskForm({ columnId, onAddTask, onClose }: AddTaskFormProps) 
                   </FormItem>
                 )}
               />
-              {/* Due Date Picker */}
               <FormField
                 control={form.control}
                 name="dueDate"
                 render={({ field }) => (
-                  <FormItem className="flex flex-col pt-2"> {/* Adjust alignment */}
-                    <FormLabel className="mb-1">Due Date (Optional)</FormLabel>
+                  <FormItem className="flex flex-col pt-2">
+                    <FormLabel className="mb-1">{t('dueDateLabel')}</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -179,7 +193,7 @@ export function AddTaskForm({ columnId, onAddTask, onClose }: AddTaskFormProps) 
                             {field.value ? (
                               format(field.value, "PPP")
                             ) : (
-                              <span>Pick a date</span>
+                              <span>{t('dueDatePlaceholder')}</span>
                             )}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
@@ -190,7 +204,6 @@ export function AddTaskForm({ columnId, onAddTask, onClose }: AddTaskFormProps) 
                           mode="single"
                           selected={field.value}
                           onSelect={field.onChange}
-                          // disabled={(date) => date < new Date("1900-01-01") } // Optional: disable past dates
                           initialFocus
                         />
                       </PopoverContent>
@@ -200,25 +213,24 @@ export function AddTaskForm({ columnId, onAddTask, onClose }: AddTaskFormProps) 
                 )}
               />
             </div>
-           {/* Assignee Select Field */}
           <FormField
             control={form.control}
             name="assigneeId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Assignee (Optional)</FormLabel>
+                <FormLabel>{t('assigneeLabel')}</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value || UNASSIGNED_VALUE}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select assignee" />
+                      <SelectValue placeholder={t('assigneePlaceholder')} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {/* Use a non-empty value for the unassigned option */}
-                    <SelectItem value={UNASSIGNED_VALUE}>Unassigned</SelectItem>
+                    <SelectItem value={UNASSIGNED_VALUE}>{t('unassigned')}</SelectItem>
                     {mockUsers.map((user) => (
                       <SelectItem key={user.id} value={user.id}>
-                        {user.name}
+                         {/* Translate assignee names */}
+                         {tAssignee(user.name as keyof typeof tAssignee.messages)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -230,10 +242,10 @@ export function AddTaskForm({ columnId, onAddTask, onClose }: AddTaskFormProps) 
           <DialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="outline">
-                Cancel
+                {t('cancelButton')}
               </Button>
             </DialogClose>
-            <Button type="submit">Add Task</Button>
+            <Button type="submit">{t('submitButton')}</Button>
           </DialogFooter>
         </form>
       </Form>

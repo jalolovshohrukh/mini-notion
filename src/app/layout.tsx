@@ -1,32 +1,13 @@
+// This file can be kept minimal or removed if not needed for root-level configuration.
+// The main layout structure is now in src/app/[locale]/layout.tsx.
 
-import type { Metadata } from "next";
-import { Inter } from "next/font/google"; // Use Inter for clear readability
-import "./globals.css";
-import { Toaster } from "@/components/ui/toaster"; // Import Toaster
-import { AuthProvider } from "@/context/AuthContext"; // Import AuthProvider
-
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-
-export const metadata: Metadata = {
-  title: "CITY PARK", // Updated title
-  description: "Manage your tasks with a simple Kanban board.",
-};
+// You could potentially keep global providers here if they don't depend on locale,
+// but for simplicity, everything is moved to the localized layout for now.
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
-  return (
-    <html lang="en" className="h-full">
-      <body
-        className={`${inter.variable} font-sans antialiased h-full bg-background`}
-      >
-        <AuthProvider> {/* Wrap children with AuthProvider */}
-            {children}
-            <Toaster /> {/* Add Toaster component */}
-        </AuthProvider>
-      </body>
-    </html>
-  );
+}) {
+  return children; // Just pass children through
 }

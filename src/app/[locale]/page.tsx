@@ -2,16 +2,18 @@
 "use client";
 
 import React, { useState, useEffect, useContext } from "react";
-import { useRouter } from 'next/navigation'; // Import useRouter
+import { useRouter } from 'next/navigation';
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, Loader2 } from "lucide-react"; // Import LogOut and Loader2
+import { Plus, LogOut, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { AddColumnForm } from "@/components/kanban/AddColumnForm";
 import type { Task, Column, Priority } from "@/lib/types";
-import { initialColumns, initialTasks } from "@/lib/initial-data";
+import { initialColumns, initialTasks } from "@/lib/initial-data"; // Adjust path if needed
 import { generateTaskId, generateColumnId } from "@/lib/utils";
-import { AuthContext } from "@/context/AuthContext"; // Import AuthContext
+import { AuthContext } from "@/context/AuthContext";
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'; // Import LanguageSwitcher
+import { useI18n } from '@/i18n/client'; // Import useI18n
 
 // Basic HEX color format validation (e.g., #RRGGBB or #RGB)
 const hexColorRegex = /^#([0-9a-fA-F]{3}){1,2}$/;
@@ -20,26 +22,27 @@ const validPriorities: Priority[] = ["High", "Medium", "Low"];
 const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/;
 
 
-export default function Home() {
+export default function HomePage() { // Renamed component
   const [columns, setColumns] = useState<Column[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isClient, setIsClient] = useState(false);
   const [isAddColumnDialogOpen, setIsAddColumnDialogOpen] = useState(false);
 
-  const { user, loading, logout } = useContext(AuthContext); // Get auth state and logout function
-  const router = useRouter(); // Initialize router
+  const { user, loading, logout } = useContext(AuthContext);
+  const router = useRouter();
+  const t = useI18n(); // Initialize i18n hook
 
   // Authentication Check and Redirect
   useEffect(() => {
+    // Need to adjust redirect logic for locale later if login page is localized
     if (!loading && !user) {
-      router.push('/login'); // Redirect to login if not authenticated and not loading
+      router.push('/login'); // Simple redirect for now
     }
   }, [user, loading, router]);
 
 
   // Load initial data or from localStorage only on the client AFTER auth check passes
   useEffect(() => {
-    // Only run if authenticated and client-side
     if (user && typeof window !== 'undefined') {
         setIsClient(true);
         const savedTasks = localStorage.getItem("kanbanTasks");
@@ -52,20 +55,22 @@ export default function Home() {
                     setColumns(parsedColumns);
                 } else {
                     console.warn("Invalid or outdated columns data found in localStorage, using initial data.");
+                    // Translate initial column titles if needed here or load translated versions
                     setColumns(initialColumns);
                 }
             } catch (error) {
                 console.error("Error parsing columns from localStorage:", error);
+                 // Translate initial column titles if needed here or load translated versions
                 setColumns(initialColumns);
             }
         } else {
+            // Translate initial column titles if needed here or load translated versions
             setColumns(initialColumns);
         }
 
         if (savedTasks) {
             try {
                 const parsedTasks = JSON.parse(savedTasks);
-                 // Validate tasks including optional assignee and dueDate fields
                  if (Array.isArray(parsedTasks) && parsedTasks.every(task =>
                     task.id &&
                     task.title &&
@@ -73,42 +78,44 @@ export default function Home() {
                     (task.priority === undefined || validPriorities.includes(task.priority)) &&
                     (task.assigneeId === undefined || typeof task.assigneeId === 'string') &&
                     (task.assigneeName === undefined || typeof task.assigneeName === 'string') &&
-                    (task.dueDate === undefined || (typeof task.dueDate === 'string' && isoDateRegex.test(task.dueDate))) // Validate dueDate format
+                    (task.dueDate === undefined || (typeof task.dueDate === 'string' && isoDateRegex.test(task.dueDate)))
                  )) {
                     const tasksWithDefaults = parsedTasks.map(task => ({
                         ...task,
                         priority: task.priority || "Medium"
-                        // Assignee and DueDate fields are optional, keep them as they are or undefined
                     }));
+                    // Translate initial task titles/descriptions if needed
                     setTasks(tasksWithDefaults);
                  } else {
                     console.warn("Invalid tasks data found in localStorage, using initial data.");
+                    // Translate initial task titles/descriptions if needed
                     setTasks(initialTasks.map(task => ({ ...task, priority: task.priority || "Medium" })));
                  }
             } catch (error) {
                 console.error("Error parsing tasks from localStorage:", error);
-                setTasks(initialTasks.map(task => ({ ...task, priority: task.priority || "Medium" })));
+                 // Translate initial task titles/descriptions if needed
+                 setTasks(initialTasks.map(task => ({ ...task, priority: task.priority || "Medium" })));
             }
         } else {
+            // Translate initial task titles/descriptions if needed
             setTasks(initialTasks.map(task => ({ ...task, priority: task.priority || "Medium" })));
         }
     } else if (!user && !loading) {
-        // Clear local storage if user logs out
          if (typeof window !== 'undefined') {
              localStorage.removeItem("kanbanTasks");
              localStorage.removeItem("kanbanColumns");
          }
     }
-  }, [user, loading]); // Depend on user and loading state
+  }, [user, loading]);
 
-  // Save tasks to localStorage whenever they change (client-side only and user logged in)
+  // Save tasks to localStorage whenever they change
   useEffect(() => {
     if (isClient && user) {
       localStorage.setItem("kanbanTasks", JSON.stringify(tasks));
     }
   }, [tasks, isClient, user]);
 
-  // Save columns to localStorage whenever they change (client-side only and user logged in)
+  // Save columns to localStorage whenever they change
   useEffect(() => {
     if (isClient && user) {
         localStorage.setItem("kanbanColumns", JSON.stringify(columns));
@@ -116,7 +123,7 @@ export default function Home() {
   }, [columns, isClient, user]);
 
   const handleDrop = (columnId: string, taskId: string) => {
-     if (!isClient || !user) return; // Check auth
+     if (!isClient || !user) return;
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
         task.id === taskId ? { ...task, columnId: columnId } : task
@@ -125,44 +132,44 @@ export default function Home() {
   };
 
   const handleAddTask = (columnId: string, newTaskData: Omit<Task, "id" | "columnId">) => {
-     if (!isClient || !user) return; // Check auth
+     if (!isClient || !user) return;
      const newTask: Task = {
         id: generateTaskId(),
         columnId: columnId,
         title: newTaskData.title,
         description: newTaskData.description,
         priority: newTaskData.priority || "Medium",
-        assigneeId: newTaskData.assigneeId, // Include assigneeId
-        assigneeName: newTaskData.assigneeName, // Include assigneeName
-        dueDate: newTaskData.dueDate, // Include dueDate
+        assigneeId: newTaskData.assigneeId,
+        assigneeName: newTaskData.assigneeName,
+        dueDate: newTaskData.dueDate,
      };
      setTasks((prevTasks) => [...prevTasks, newTask]);
   };
 
   const handleEditTask = (taskId: string, updatedTaskData: Omit<Task, "id" | "columnId">) => {
-     if (!isClient || !user) return; // Check auth
+     if (!isClient || !user) return;
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
         task.id === taskId ? {
-            ...task, // Keep existing properties like id and columnId
+            ...task,
             title: updatedTaskData.title,
             description: updatedTaskData.description,
             priority: updatedTaskData.priority,
-            assigneeId: updatedTaskData.assigneeId, // Update assigneeId
-            assigneeName: updatedTaskData.assigneeName, // Update assigneeName
-            dueDate: updatedTaskData.dueDate, // Update dueDate
+            assigneeId: updatedTaskData.assigneeId,
+            assigneeName: updatedTaskData.assigneeName,
+            dueDate: updatedTaskData.dueDate,
         } : task
       )
     );
   };
 
   const handleDeleteTask = (taskId: string) => {
-     if (!isClient || !user) return; // Check auth
+     if (!isClient || !user) return;
     setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
   };
 
    const handleAddColumn = (title: string, color: string) => {
-     if (!isClient || !user) return; // Check auth
+     if (!isClient || !user) return;
     const newColumn: Column = {
       id: generateColumnId(),
       title: title,
@@ -173,13 +180,13 @@ export default function Home() {
   };
 
   const handleDeleteColumn = (columnIdToDelete: string) => {
-      if (!isClient || !user) return; // Check auth
+      if (!isClient || !user) return;
      setColumns((prevColumns) => prevColumns.filter((column) => column.id !== columnIdToDelete));
      setTasks((prevTasks) => prevTasks.filter((task) => task.columnId !== columnIdToDelete));
   };
 
   const handleEditColumn = (columnId: string, newTitle: string, newColor: string) => {
-      if (!isClient || !user) return; // Check auth
+      if (!isClient || !user) return;
       setColumns((prevColumns) =>
         prevColumns.map((column) =>
           column.id === columnId ? { ...column, title: newTitle, color: newColor } : column
@@ -187,38 +194,33 @@ export default function Home() {
       );
   };
 
-   // Show loading indicator while checking auth or if not yet client-side
-   // or if user is null but still loading (avoids flicker before redirect)
   if (loading || !isClient) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        {/* <p className="text-muted-foreground">Loading Kanban Board...</p> */}
+        {/* <p className="text-muted-foreground">{t('kanban.loading')}</p> */}
       </div>
     );
   }
 
-  // If loading is finished, and there's no user, redirect effect should handle it,
-  // but we can show a message or null just in case.
   if (!user) {
      return (
          <div className="flex h-screen items-center justify-center">
-            <p className="text-muted-foreground">Redirecting to login...</p>
+            <p className="text-muted-foreground">{t('login.redirecting')}</p>
          </div>
      );
   }
 
-  // User is authenticated and client is ready, render the board
   return (
     <main className="flex flex-col h-screen bg-background">
-        {/* Header */}
         <header className="p-4 border-b shrink-0 flex justify-between items-center">
-             <h1 className="text-xl font-semibold text-foreground">CITY PARK</h1>
-             <div className="flex items-center space-x-2">
+             <h1 className="text-xl font-semibold text-foreground">{t('metadata.title')}</h1> {/* Use translated title */}
+             <div className="flex items-center space-x-4"> {/* Increased spacing */}
+                 <LanguageSwitcher /> {/* Add LanguageSwitcher */}
                  <Dialog open={isAddColumnDialogOpen} onOpenChange={setIsAddColumnDialogOpen}>
                     <DialogTrigger asChild>
                         <Button>
-                            <Plus className="mr-2 h-4 w-4" /> Add Column
+                            <Plus className="mr-2 h-4 w-4" /> {t('kanban.addColumnButton')}
                         </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-[425px]">
@@ -226,11 +228,10 @@ export default function Home() {
                     </DialogContent>
                 </Dialog>
                  <Button variant="outline" onClick={logout}>
-                    <LogOut className="mr-2 h-4 w-4" /> Logout
+                    <LogOut className="mr-2 h-4 w-4" /> {t('kanban.logoutButton')}
                  </Button>
              </div>
         </header>
-        {/* Kanban Board Area */}
         <div className="flex-1 overflow-hidden">
             <KanbanBoard
                 columns={columns}

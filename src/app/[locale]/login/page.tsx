@@ -15,13 +15,11 @@ import { AuthContext } from '@/context/AuthContext';
 import { Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-// import { Separator } from '@/components/ui/separator'; // Removed Separator import
-
-// // Inline SVG for Google icon - Removed
-// const GoogleIcon = () => ( ... );
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'; // Import LanguageSwitcher
+import { useI18n, useCurrentLocale } from '@/i18n/client'; // Import i18n hooks
 
 const loginSchema = z.object({
-  email: z.string().email({ message: 'Invalid email address.' }),
+  email: z.string().email({ message: 'Invalid email address.' }), // Keep validation messages in English or create dynamic ones
   password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
 });
 
@@ -29,10 +27,11 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
-  // const [isGoogleLoading, setIsGoogleLoading] = useState(false); // Removed Google loading state
   const [error, setError] = useState<string | null>(null);
-  const { user, loading, login } = useContext(AuthContext); // Removed loginWithGoogle
+  const { user, loading, login } = useContext(AuthContext);
   const router = useRouter();
+  const t = useI18n(); // Initialize i18n hook
+  const currentLocale = useCurrentLocale(); // Get current locale
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -45,9 +44,9 @@ export default function LoginPage() {
   // Redirect if user is already logged in
   useEffect(() => {
     if (!loading && user) {
-      router.push('/');
+      router.push(`/${currentLocale}`); // Redirect to localized home page
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, currentLocale]);
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
@@ -57,32 +56,30 @@ export default function LoginPage() {
       // Redirect is handled by the effect watching the user state
     } catch (err: any) {
         console.error("Detailed Login Error:", err);
+        // Use translated error messages
         switch (err.code) {
             case 'auth/user-not-found':
             case 'auth/invalid-credential':
             case 'auth/wrong-password':
-                 setError('Invalid email or password. Please try again.');
+                 setError(t('login.error.invalidCredentials'));
                  break;
             case 'auth/invalid-email':
-                setError('Please enter a valid email address.');
+                setError(t('login.error.invalidEmail'));
                 break;
              case 'auth/too-many-requests':
-                setError('Too many login attempts. Please try again later.');
+                setError(t('login.error.tooManyRequests'));
                 break;
             default:
-                setError('An unexpected error occurred during login. Please try again.');
+                setError(t('login.error.generic'));
         }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Removed handleGoogleLogin function
-  // const handleGoogleLogin = async () => { ... };
-
 
   // Show loading indicator while checking auth state or if already logged in
-  if (loading || (!loading && user)) { // Removed isGoogleLoading check
+  if (loading || (!loading && user)) {
      return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -93,16 +90,20 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-sm shadow-lg">
+      <Card className="w-full max-w-sm shadow-lg relative"> {/* Added relative positioning */}
+         {/* Language Switcher */}
+         <div className="absolute top-4 right-4">
+             <LanguageSwitcher />
+         </div>
         <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
-          <CardDescription>Enter your email below to login to your account.</CardDescription> {/* Updated description */}
+          <CardTitle className="text-2xl">{t('login.title')}</CardTitle>
+          <CardDescription>{t('login.description')}</CardDescription>
         </CardHeader>
         <CardContent>
            {error && (
              <Alert variant="destructive" className="mb-4">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Login Failed</AlertTitle>
+                <AlertTitle>{t('login.failedTitle')}</AlertTitle>
                 <AlertDescription>{error}</AlertDescription>
              </Alert>
           )}
@@ -113,15 +114,15 @@ export default function LoginPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>{t('login.emailLabel')}</FormLabel>
                     <FormControl>
                       <Input
                         id="email"
                         type="email"
-                        placeholder="m@example.com"
+                        placeholder={t('login.emailPlaceholder')}
                         required
                         {...field}
-                        disabled={isLoading} // Removed isGoogleLoading check
+                        disabled={isLoading}
                       />
                     </FormControl>
                     <FormMessage />
@@ -133,41 +134,28 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                     <FormLabel htmlFor="password">Password</FormLabel>
+                     <FormLabel htmlFor="password">{t('login.passwordLabel')}</FormLabel>
                     <FormControl>
                        <Input
                          id="password"
                          type="password"
                          required
                          {...field}
-                         disabled={isLoading} // Removed isGoogleLoading check
+                         disabled={isLoading}
                        />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isLoading}> {/* Removed isGoogleLoading check */}
+              <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                {isLoading ? 'Logging in...' : 'Login'}
+                {isLoading ? t('login.loadingButton') : t('login.button')}
               </Button>
             </form>
           </Form>
-
-           {/* Removed Separator and Google Button */}
-           {/* <Separator className="my-4" /> */}
-           {/* <Button ... onClick={handleGoogleLogin} ...> ... </Button> */}
-
-              {/* Optional: Add links for signup or password reset if needed later */}
-              {/* <div className="mt-4 text-center text-sm">
-                Don't have an account?{' '}
-                <a href="#" className="underline">
-                  Sign up
-                </a>
-              </div> */}
         </CardContent>
       </Card>
     </div>
   );
 }
-

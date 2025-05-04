@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState } from "react";
-import type { Column, Task, Priority } from "@/lib/types"; // Import Priority
+import type { Column, Task, Priority } from "@/lib/types";
 import { TaskCard } from "./TaskCard";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, MoreHorizontal, Pencil } from "lucide-react";
@@ -29,6 +29,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+import { useScopedI18n } from '@/i18n/client'; // Import i18n hook
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"; // Import Tooltip
 
 
 interface KanbanColumnProps {
@@ -43,7 +45,6 @@ interface KanbanColumnProps {
   onEditColumn: (columnId: string, newTitle: string, newColor: string) => void;
 }
 
-// Define the order for sorting priorities
 const priorityOrder: Record<Priority, number> = {
   High: 1,
   Medium: 2,
@@ -65,10 +66,9 @@ export function KanbanColumn({
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const t = useScopedI18n('column'); // Scope translations
 
-  // Sort tasks by priority
   const sortedTasks = [...tasks].sort((a, b) => {
-    // Treat undefined priority as Medium for sorting purposes
     const priorityA = priorityOrder[a.priority || "Medium"];
     const priorityB = priorityOrder[b.priority || "Medium"];
     return priorityA - priorityB;
@@ -88,10 +88,7 @@ export function KanbanColumn({
     e.preventDefault();
     setIsOver(false);
     const taskId = e.dataTransfer.getData("taskId");
-    // Ensure taskId exists and is not the one currently being dragged within the same column
     if (taskId && draggingTaskId === taskId && tasks.find(t => t.id === taskId)) {
-        // Avoid triggering onDrop if the item is dropped back into the same column visually
-        // The actual logic in the parent already handles the state update correctly if columnId changes
         return;
     }
      if (taskId) {
@@ -123,19 +120,17 @@ export function KanbanColumn({
   const isLightColor = (hexColor: string): boolean => {
     try {
       const hex = hexColor.replace('#', '');
-      // Handle short hex codes (#RGB)
       const fullHex = hex.length === 3 ? hex.split('').map(c => c + c).join('') : hex;
-      if (fullHex.length !== 6) return true; // Default to light if format is wrong
+      if (fullHex.length !== 6) return true;
 
       const r = parseInt(fullHex.substring(0, 2), 16);
       const g = parseInt(fullHex.substring(2, 4), 16);
       const b = parseInt(fullHex.substring(4, 6), 16);
-      // Simple luminance calculation
       const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-      return luminance > 0.6; // Threshold might need adjustment
+      return luminance > 0.6;
     } catch (e) {
       console.error("Error determining color brightness, defaulting to dark text:", e);
-      return true; // Default to assuming light background on error
+      return true;
     }
   };
 
@@ -160,46 +155,60 @@ export function KanbanColumn({
         style={headerStyle}
       >
         <h2 className="text-lg font-semibold truncate pr-2">
-          {column.title} {/* Removed task count */}
+          {/* Translate column title if it's from initial data or allow user-input */}
+          {column.title}
         </h2>
         <div className="flex items-center space-x-1">
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className={cn("h-7 w-7", textColorClass, iconHoverBgClass)}>
-                <Plus className="h-4 w-4" />
-                <span className="sr-only">Add Task</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <AddTaskForm columnId={column.id} onAddTask={handleAddTaskSubmit} onClose={handleAddDialogClose} />
-            </DialogContent>
-          </Dialog>
-
-           <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <TooltipProvider>
+             <Tooltip>
+                  <TooltipTrigger asChild>
+                       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className={cn("h-7 w-7", textColorClass, iconHoverBgClass)}>
+                                    <Plus className="h-4 w-4" />
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[425px]">
+                            <AddTaskForm columnId={column.id} onAddTask={handleAddTaskSubmit} onClose={handleAddDialogClose} />
+                            </DialogContent>
+                       </Dialog>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{t('addTaskTooltip')}</p>
+                  </TooltipContent>
+             </Tooltip>
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
               <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                  <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className={cn("h-7 w-7", textColorClass, iconHoverBgClass)}>
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Column Options</span>
-                      </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DialogTrigger asChild>
-                            <DropdownMenuItem className="cursor-pointer">
-                                <Pencil className="mr-2 h-4 w-4" />
-                                <span>Edit Column</span>
-                            </DropdownMenuItem>
-                        </DialogTrigger>
-                         <DropdownMenuSeparator />
-                          <AlertDialogTrigger asChild>
-                              <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer">
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  <span>Delete Column</span>
-                              </DropdownMenuItem>
-                          </AlertDialogTrigger>
-                      </DropdownMenuContent>
-                  </DropdownMenu>
+                  <Tooltip>
+                     <TooltipTrigger asChild>
+                           <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className={cn("h-7 w-7", textColorClass, iconHoverBgClass)}>
+                                  <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DialogTrigger asChild>
+                                    <DropdownMenuItem className="cursor-pointer">
+                                        <Pencil className="mr-2 h-4 w-4" />
+                                        <span>{t('editOption')}</span>
+                                    </DropdownMenuItem>
+                                </DialogTrigger>
+                                <DropdownMenuSeparator />
+                                <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer">
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        <span>{t('deleteOption')}</span>
+                                    </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                              </DropdownMenuContent>
+                           </DropdownMenu>
+                     </TooltipTrigger>
+                     <TooltipContent>
+                        <p>{t('optionsTooltip')}</p>
+                     </TooltipContent>
+                 </Tooltip>
+
                   <DialogContent className="sm:max-w-[425px]">
                       <EditColumnForm
                           column={column}
@@ -211,31 +220,30 @@ export function KanbanColumn({
 
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete the
-                        <span className="font-semibold"> {column.title}</span> column and all tasks within it.
-                    </AlertDialogDescription>
+                        <AlertDialogTitle>{t('deleteConfirmTitle')}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('deleteConfirmDescription', { columnTitle: column.title })}
+                        </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={confirmDeleteColumn} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                        Delete
-                    </AlertDialogAction>
+                        <AlertDialogCancel>{t('deleteConfirmCancel')}</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDeleteColumn} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            {t('deleteConfirmAction')}
+                        </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
            </AlertDialog>
+          </TooltipProvider>
         </div>
 
       </div>
       <ScrollArea className="flex-1 p-4 pt-0">
         <div className="min-h-[200px] pt-4">
-           {/* Map over sorted tasks instead of the original tasks prop */}
           {sortedTasks.map((task) => (
             <TaskCard
               key={task.id}
               task={task}
-              column={column} // Pass column down
+              column={column}
               isDragging={draggingTaskId === task.id}
               onEditTask={onEditTask}
               onDeleteTask={onDeleteTask}
@@ -243,12 +251,12 @@ export function KanbanColumn({
           ))}
            {tasks.length === 0 && !isOver && (
              <div className={cn("text-center p-4 italic", isLightColor(column.color) ? "text-muted-foreground/80" : "text-white/60")}>
-               Drag tasks here or click '+' to add.
+               {t('emptyState')}
              </div>
            )}
            {isOver && (
              <div className="h-16 border-2 border-dashed border-primary/50 rounded-md bg-primary/10 flex items-center justify-center text-primary font-medium mt-2">
-               Drop here
+               {t('dropZone')}
              </div>
            )}
         </div>
@@ -256,4 +264,3 @@ export function KanbanColumn({
     </div>
   );
 }
-
