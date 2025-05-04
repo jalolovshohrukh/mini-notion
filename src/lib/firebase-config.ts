@@ -15,12 +15,17 @@ const firebaseConfig: FirebaseOptions = {
 };
 
 // Validate essential environment variables, especially the API key
-if (!firebaseConfig.apiKey) {
-  console.error(
-    'Firebase API Key (NEXT_PUBLIC_FIREBASE_API_KEY) is missing or invalid. Please check your environment variables.'
-  );
+if (!firebaseConfig.apiKey || typeof firebaseConfig.apiKey !== 'string' || firebaseConfig.apiKey.trim() === '') {
+  const errorMsg = `Firebase API Key (NEXT_PUBLIC_FIREBASE_API_KEY) is missing, invalid, or empty in the environment where the application is running.
+    Current value detected: '${firebaseConfig.apiKey}'
+    Please verify the following:
+    1. The .env.local (or similar) file contains the correct NEXT_PUBLIC_FIREBASE_API_KEY.
+    2. The Next.js development server was restarted after setting the environment variable.
+    3. If deploying, the environment variable is correctly set in your deployment environment/platform.
+    4. The API key copied from the Firebase Console (Project settings > Your apps > Web app config) is accurate.`;
+  console.error("CRITICAL FIREBASE CONFIGURATION ERROR:", errorMsg);
   // Throwing an error here will prevent the app from initializing Firebase incorrectly.
-  throw new Error('Firebase API Key is missing or invalid. Check NEXT_PUBLIC_FIREBASE_API_KEY environment variable.');
+  throw new Error(errorMsg);
 }
 
 if (
@@ -32,7 +37,7 @@ if (
   !firebaseConfig.appId
 ) {
   console.warn(
-    'Some Firebase configuration values (authDomain, projectId, appId) might be missing. Check your environment variables if you encounter issues with specific Firebase services.'
+    'Some optional Firebase configuration values (authDomain, projectId, appId, etc.) might be missing. Check your environment variables if you encounter issues with specific Firebase services.'
   );
 }
 
@@ -42,6 +47,7 @@ let app;
 if (!getApps().length) {
     try {
         app = initializeApp(firebaseConfig);
+        console.log("Firebase initialized successfully."); // Add log for successful init
     } catch (error) {
         console.error("Failed to initialize Firebase:", error);
         // Handle initialization error, maybe show a user-friendly message
@@ -49,6 +55,7 @@ if (!getApps().length) {
     }
 } else {
     app = getApp();
+     // console.log("Firebase app already initialized."); // Optional log
 }
 
 const auth = getAuth(app);
