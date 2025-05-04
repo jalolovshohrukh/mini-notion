@@ -3,11 +3,13 @@
 
 import React, { useState } from "react";
 import type { Task, Priority, Column } from "@/lib/types"; // Import Column type
+import { format, parseISO, isPast } from 'date-fns'; // Import date-fns
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge, badgeVariants } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"; // Import Avatar components
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet"; // Import Sheet components
 import { TaskDetailSheet } from "./TaskDetailSheet"; // Import the new detail sheet component
+import { CalendarIcon } from "lucide-react"; // Import Calendar icon
 import { cn } from "@/lib/utils";
 import type { VariantProps } from "class-variance-authority";
 
@@ -44,6 +46,17 @@ const getInitials = (name?: string): string => {
 
 export function TaskCard({ task, column, isDragging, onEditTask, onDeleteTask }: TaskCardProps) {
   const [isSheetOpen, setIsSheetOpen] = useState(false); // State to control the sheet
+  const dueDate = task.dueDate ? parseISO(task.dueDate) : null;
+  const isDueDatePast = dueDate && isPast(dueDate) && !isDateToday(dueDate); // Check if due date is past (and not today)
+
+
+  // Helper function to check if a date is today
+   function isDateToday(date: Date): boolean {
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+           date.getMonth() === today.getMonth() &&
+           date.getFullYear() === today.getFullYear();
+  }
 
   return (
     <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
@@ -75,20 +88,37 @@ export function TaskCard({ task, column, isDragging, onEditTask, onDeleteTask }:
                 {task.description}
               </CardDescription>
             )}
-             <div className="flex justify-between items-center pt-1">
-               <Badge variant={getPriorityBadgeVariant(task.priority)} className="text-xs px-1.5 py-0.5">
-                 {task.priority || "Medium"}
-               </Badge>
+             <div className="flex justify-between items-end pt-1"> {/* Use items-end */}
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1"> {/* Wrap badges */}
+                    <Badge variant={getPriorityBadgeVariant(task.priority)} className="text-xs px-1.5 py-0.5">
+                        {task.priority || "Medium"}
+                    </Badge>
+                    {/* Display Due Date */}
+                    {dueDate && (
+                       <Badge
+                           variant={isDueDatePast ? "destructive" : "outline"}
+                           className={cn(
+                               "text-xs px-1.5 py-0.5 font-normal", // lighter font
+                               isDueDatePast ? "text-destructive-foreground" : "text-muted-foreground" // Dim color for outline
+                           )}
+                       >
+                           <CalendarIcon className="mr-1 h-3 w-3" /> {/* Smaller icon */}
+                           {format(dueDate, "MMM d")}
+                        </Badge>
+                    )}
+                </div>
+
                 {/* Display Assignee Avatar and Name */}
                 {task.assigneeName && (
-                  <div className="flex items-center space-x-1.5"> {/* Reduced space */}
+                  <div className="flex items-center space-x-1 flex-shrink-0 ml-2"> {/* Allow shrinking, add margin */}
                      <Avatar className="h-5 w-5"> {/* Made avatar slightly smaller */}
                          {/* <AvatarImage src="/path/to/avatar.jpg" alt={task.assigneeName} /> */}
                          <AvatarFallback className="text-[10px] bg-muted text-muted-foreground"> {/* Smaller text */}
                              {getInitials(task.assigneeName)}
                          </AvatarFallback>
                      </Avatar>
-                      <span className="text-xs text-muted-foreground truncate">{task.assigneeName}</span> {/* Show full name */}
+                      {/* Hide name on small screens or if too long? Consider tooltip */}
+                      {/* <span className="text-xs text-muted-foreground truncate">{task.assigneeName}</span> */}
                   </div>
                 )}
              </div>
@@ -107,3 +137,4 @@ export function TaskCard({ task, column, isDragging, onEditTask, onDeleteTask }:
     </Sheet>
   );
 }
+     

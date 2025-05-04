@@ -9,6 +9,7 @@ export interface Task {
   columnId: string;
   assigneeId?: string; // Optional: ID of the user assigned to the task
   assigneeName?: string; // Optional: Display name of the assignee
+  dueDate?: string; // Optional: Due date as an ISO string (e.g., "2024-12-31")
 }
 
 export interface Column {

@@ -16,6 +16,9 @@ import { AuthContext } from "@/context/AuthContext"; // Import AuthContext
 // Basic HEX color format validation (e.g., #RRGGBB or #RGB)
 const hexColorRegex = /^#([0-9a-fA-F]{3}){1,2}$/;
 const validPriorities: Priority[] = ["High", "Medium", "Low"];
+// Basic ISO Date string validation (YYYY-MM-DD)
+const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/;
+
 
 export default function Home() {
   const [columns, setColumns] = useState<Column[]>([]);
@@ -62,19 +65,20 @@ export default function Home() {
         if (savedTasks) {
             try {
                 const parsedTasks = JSON.parse(savedTasks);
-                 // Validate tasks including optional assignee fields
+                 // Validate tasks including optional assignee and dueDate fields
                  if (Array.isArray(parsedTasks) && parsedTasks.every(task =>
                     task.id &&
                     task.title &&
                     task.columnId &&
                     (task.priority === undefined || validPriorities.includes(task.priority)) &&
                     (task.assigneeId === undefined || typeof task.assigneeId === 'string') &&
-                    (task.assigneeName === undefined || typeof task.assigneeName === 'string')
+                    (task.assigneeName === undefined || typeof task.assigneeName === 'string') &&
+                    (task.dueDate === undefined || (typeof task.dueDate === 'string' && isoDateRegex.test(task.dueDate))) // Validate dueDate format
                  )) {
                     const tasksWithDefaults = parsedTasks.map(task => ({
                         ...task,
                         priority: task.priority || "Medium"
-                        // Assignee fields are optional, keep them as they are or undefined
+                        // Assignee and DueDate fields are optional, keep them as they are or undefined
                     }));
                     setTasks(tasksWithDefaults);
                  } else {
@@ -130,6 +134,7 @@ export default function Home() {
         priority: newTaskData.priority || "Medium",
         assigneeId: newTaskData.assigneeId, // Include assigneeId
         assigneeName: newTaskData.assigneeName, // Include assigneeName
+        dueDate: newTaskData.dueDate, // Include dueDate
      };
      setTasks((prevTasks) => [...prevTasks, newTask]);
   };
@@ -144,7 +149,8 @@ export default function Home() {
             description: updatedTaskData.description,
             priority: updatedTaskData.priority,
             assigneeId: updatedTaskData.assigneeId, // Update assigneeId
-            assigneeName: updatedTaskData.assigneeName // Update assigneeName
+            assigneeName: updatedTaskData.assigneeName, // Update assigneeName
+            dueDate: updatedTaskData.dueDate, // Update dueDate
         } : task
       )
     );

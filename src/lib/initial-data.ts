@@ -1,5 +1,9 @@
 
 import type { Task, Column } from "@/lib/types";
+import { addDays, formatISO } from 'date-fns'; // Import date-fns for date manipulation
+
+// Get today's date for relative due dates
+const today = new Date();
 
 // Using HEX values similar to common UI palettes
 export const initialColumns: Column[] = [
@@ -17,6 +21,7 @@ export const initialTasks: Task[] = [
     columnId: "done",
     assigneeId: "user-1", // Ilhom
     assigneeName: "Ilhom",
+    dueDate: formatISO(addDays(today, -2), { representation: 'date' }), // Example: 2 days ago
   },
   {
     id: "task-2",
@@ -26,6 +31,7 @@ export const initialTasks: Task[] = [
     columnId: "inprogress",
      assigneeId: "user-2", // Parvina
     assigneeName: "Parvina",
+    dueDate: formatISO(addDays(today, 3), { representation: 'date' }), // Example: 3 days from now
   },
   {
     id: "task-3",
@@ -34,6 +40,7 @@ export const initialTasks: Task[] = [
     priority: "Medium",
     columnId: "todo",
     // No assignee
+     dueDate: formatISO(addDays(today, 7), { representation: 'date' }), // Example: 1 week from now
   },
   {
     id: "task-4",
@@ -43,6 +50,7 @@ export const initialTasks: Task[] = [
     columnId: "todo",
      assigneeId: "user-1", // Ilhom
      assigneeName: "Ilhom",
+     // No due date
   },
    {
     id: "task-5",
@@ -52,6 +60,7 @@ export const initialTasks: Task[] = [
     columnId: "inprogress",
      assigneeId: "user-2", // Parvina
      assigneeName: "Parvina",
+     dueDate: formatISO(addDays(today, 5), { representation: 'date' }), // Example: 5 days from now
   },
    {
     id: "task-6",
@@ -61,5 +70,6 @@ export const initialTasks: Task[] = [
     columnId: "todo",
     assigneeId: "user-3", // Madina
     assigneeName: "Madina",
+    dueDate: formatISO(addDays(today, 10), { representation: 'date' }), // Example: 10 days from now
    }
 ];

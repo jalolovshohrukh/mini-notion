@@ -3,6 +3,7 @@
 
 import React, { useState } from 'react';
 import type { Task, Column, Priority } from "@/lib/types";
+import { format, formatISO, parseISO } from 'date-fns'; // Import date-fns
 import { Button } from "@/components/ui/button";
 import { Badge, badgeVariants } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"; // Import Avatar
@@ -23,7 +24,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Trash2, Sparkles, Calendar, GripVertical, Tag, User as UserIcon } from "lucide-react"; // Added UserIcon
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"; // Import Popover
+import { Calendar } from "@/components/ui/calendar"; // Import Calendar
+import { Trash2, Sparkles, Calendar as CalendarIcon, GripVertical, Tag, User as UserIcon } from "lucide-react"; // Added UserIcon, renamed Calendar icon
 import { cn } from "@/lib/utils";
 import type { VariantProps } from "class-variance-authority";
 import {
@@ -92,6 +99,11 @@ export function TaskDetailSheet({ task, column, onEditTask, onDeleteTask, onClos
     const [editedPriority, setEditedPriority] = useState<Priority>(task.priority || "Medium");
     // Initialize with UNASSIGNED_VALUE if assigneeId is undefined/empty
     const [editedAssigneeId, setEditedAssigneeId] = useState<string>(task.assigneeId || UNASSIGNED_VALUE);
+    // Parse dueDate string into Date object for the calendar, handle undefined
+    const [editedDueDate, setEditedDueDate] = useState<Date | undefined>(
+        task.dueDate ? parseISO(task.dueDate) : undefined
+    );
+    const [isDueDatePopoverOpen, setIsDueDatePopoverOpen] = useState(false); // State for due date popover
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
 
@@ -104,6 +116,8 @@ export function TaskDetailSheet({ task, column, onEditTask, onDeleteTask, onClos
             priority: editedPriority,
             assigneeId: isAssigned ? editedAssigneeId : undefined,
             assigneeName: selectedUser?.name || undefined,
+            // Format editedDueDate back to ISO string if it exists
+            dueDate: editedDueDate ? formatISO(editedDueDate, { representation: 'date' }) : undefined,
         });
         setIsEditing(false);
         // Optionally close the sheet after saving, or keep it open
@@ -116,6 +130,8 @@ export function TaskDetailSheet({ task, column, onEditTask, onDeleteTask, onClos
         setEditedDescription(task.description || "");
         setEditedPriority(task.priority || "Medium");
         setEditedAssigneeId(task.assigneeId || UNASSIGNED_VALUE); // Reset assignee
+        // Reset due date by parsing the original string again
+        setEditedDueDate(task.dueDate ? parseISO(task.dueDate) : undefined);
         setIsEditing(false);
     };
 
@@ -213,18 +229,60 @@ export function TaskDetailSheet({ task, column, onEditTask, onDeleteTask, onClos
               )}
           </div>
 
+           {/* Due Date Section */}
+            <div className="flex items-center space-x-4">
+                <CalendarIcon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                <Label htmlFor="dueDate" className="w-24 text-sm font-medium text-muted-foreground flex-shrink-0">Due Date</Label>
+                {isEditing ? (
+                     <Popover open={isDueDatePopoverOpen} onOpenChange={setIsDueDatePopoverOpen}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant={"outline"}
+                                className={cn(
+                                "w-[180px] justify-start text-left font-normal",
+                                !editedDueDate && "text-muted-foreground"
+                                )}
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {editedDueDate ? format(editedDueDate, "PPP") : <span>Pick a date</span>}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                            <Calendar
+                                mode="single"
+                                selected={editedDueDate}
+                                onSelect={(date) => {
+                                    setEditedDueDate(date);
+                                    setIsDueDatePopoverOpen(false); // Close popover on date select
+                                }}
+                                initialFocus
+                            />
+                              {/* Optional: Button to clear the date */}
+                             <div className="p-2 border-t border-border">
+                                <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full justify-center"
+                                onClick={() => {
+                                    setEditedDueDate(undefined);
+                                    setIsDueDatePopoverOpen(false);
+                                }}
+                                >
+                                Clear Date
+                                </Button>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                ) : (
+                    task.dueDate ? (
+                        <span className="text-sm">{format(parseISO(task.dueDate), "PPP")}</span>
+                    ) : (
+                        <span className="text-sm text-muted-foreground">No due date</span>
+                    )
+                )}
+            </div>
 
-           {/* Placeholder sections inspired by image */}
-           {/* <div className="flex items-center space-x-4 opacity-50">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground flex-shrink-0"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                <Label className="w-24 text-sm font-medium text-muted-foreground flex-shrink-0">Assignee</Label>
-                <span className="text-sm text-muted-foreground">Empty</span>
-           </div> */}
-            <div className="flex items-center space-x-4 opacity-50">
-                <Calendar className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                <Label className="w-24 text-sm font-medium text-muted-foreground flex-shrink-0">Due</Label>
-                 <span className="text-sm text-muted-foreground">Empty</span>
-           </div>
+
            <div className="flex items-center space-x-4 opacity-50">
                 <Tag className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                 <Label className="w-24 text-sm font-medium text-muted-foreground flex-shrink-0">Tags</Label>
