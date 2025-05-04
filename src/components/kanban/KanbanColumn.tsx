@@ -160,7 +160,7 @@ export function KanbanColumn({
         style={headerStyle}
       >
         <h2 className="text-lg font-semibold truncate pr-2">
-          {column.title} ({tasks.length})
+          {column.title} {/* Removed task count */}
         </h2>
         <div className="flex items-center space-x-1">
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
