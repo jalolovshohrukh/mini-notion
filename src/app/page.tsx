@@ -124,6 +124,15 @@ export default function Home() {
      setTasks((prevTasks) => prevTasks.filter((task) => task.columnId !== columnIdToDelete));
   };
 
+  const handleEditColumn = (columnId: string, newTitle: string, newColor: string) => {
+      if (!isClient) return;
+      setColumns((prevColumns) =>
+        prevColumns.map((column) =>
+          column.id === columnId ? { ...column, title: newTitle, color: newColor } : column
+        )
+      );
+  };
+
    // Render placeholder or loading state until client-side hydration
   if (!isClient) {
     return (
@@ -160,6 +169,7 @@ export default function Home() {
                 onEditTask={handleEditTask}
                 onDeleteTask={handleDeleteTask}
                 onDeleteColumn={handleDeleteColumn}
+                onEditColumn={handleEditColumn} // Pass down the edit handler
             />
         </div>
     </main>

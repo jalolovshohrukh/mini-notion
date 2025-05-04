@@ -16,6 +16,7 @@ interface KanbanBoardProps {
     onEditTask: (taskId: string, updatedTask: Omit<Task, "id" | "columnId">) => void;
     onDeleteTask: (taskId: string) => void;
     onDeleteColumn: (columnId: string) => void;
+    onEditColumn: (columnId: string, newTitle: string, newColor: string) => void; // New prop
 }
 
 export function KanbanBoard({
@@ -26,6 +27,7 @@ export function KanbanBoard({
     onEditTask,
     onDeleteTask,
     onDeleteColumn,
+    onEditColumn, // Destructure new prop
 }: KanbanBoardProps) {
   // State for tracking the currently dragged task ID remains local to the board
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
@@ -87,6 +89,7 @@ export function KanbanBoard({
           onEditTask={onEditTask} // Pass down the handler from props
           onDeleteTask={onDeleteTask} // Pass down the handler from props
           onDeleteColumn={onDeleteColumn} // Pass down the handler from props
+          onEditColumn={onEditColumn} // Pass down the new handler
         />
       ))}
        {/* "Add New Column" Button/Dialog is now removed from here and placed in page.tsx */}

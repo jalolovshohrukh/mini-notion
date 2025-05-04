@@ -5,14 +5,16 @@ import React, { useState } from "react";
 import type { Column, Task } from "@/lib/types";
 import { TaskCard } from "./TaskCard";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, MoreHorizontal } from "lucide-react";
+import { Plus, Trash2, MoreHorizontal, Pencil } from "lucide-react"; // Added Pencil icon
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { AddTaskForm } from "./AddTaskForm";
+import { EditColumnForm } from "./EditColumnForm"; // Import the new form
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator, // Added Separator
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -37,7 +39,8 @@ interface KanbanColumnProps {
   onAddTask: (columnId: string, newTask: Omit<Task, "id" | "columnId">) => void;
   onEditTask: (taskId: string, updatedTask: Omit<Task, "id" | "columnId">) => void;
   onDeleteTask: (taskId: string) => void;
-  onDeleteColumn: (columnId: string) => void; // New prop
+  onDeleteColumn: (columnId: string) => void;
+  onEditColumn: (columnId: string, newTitle: string, newColor: string) => void; // New prop
 }
 
 export function KanbanColumn({
@@ -48,10 +51,12 @@ export function KanbanColumn({
   onAddTask,
   onEditTask,
   onDeleteTask,
-  onDeleteColumn, // Destructure new prop
+  onDeleteColumn,
+  onEditColumn, // Destructure new prop
 }: KanbanColumnProps) {
   const [isOver, setIsOver] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false); // State for edit dialog
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -77,6 +82,7 @@ export function KanbanColumn({
   };
 
   const handleAddDialogClose = () => setIsAddDialogOpen(false);
+  const handleEditDialogClose = () => setIsEditDialogOpen(false); // Close handler for edit dialog
 
   const confirmDeleteColumn = () => {
      onDeleteColumn(column.id);
@@ -151,43 +157,58 @@ export function KanbanColumn({
 
            {/* Column Options Dropdown */}
            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className={cn("h-7 w-7", textColorClass, iconHoverBgClass)}>
-                    <MoreHorizontal className="h-4 w-4" />
-                    <span className="sr-only">Column Options</span>
-                </Button>
-                </DropdownMenuTrigger>
-                {/* Adjust Dropdown Content background/text if needed, though default popover style might suffice */}
-                <DropdownMenuContent align="end">
-                {/* Alert Dialog Trigger for Delete */}
-                <AlertDialogTrigger asChild>
-                     {/* Destructive text color should work against most backgrounds */}
-                    <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer">
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        <span>Delete Column</span>
-                    </DropdownMenuItem>
-                </AlertDialogTrigger>
-                {/* Add other options like 'Rename Column' here if needed */}
-                </DropdownMenuContent>
-            </DropdownMenu>
+              <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}> {/* Edit Dialog Wrapper */}
+                  <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className={cn("h-7 w-7", textColorClass, iconHoverBgClass)}>
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Column Options</span>
+                      </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {/* Edit Column Trigger */}
+                        <DialogTrigger asChild>
+                            <DropdownMenuItem className="cursor-pointer">
+                                <Pencil className="mr-2 h-4 w-4" />
+                                <span>Edit Column</span>
+                            </DropdownMenuItem>
+                        </DialogTrigger>
+                         <DropdownMenuSeparator /> {/* Separator */}
+                          {/* Delete Column Trigger (within Alert Dialog) */}
+                          <AlertDialogTrigger asChild>
+                              <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer">
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  <span>Delete Column</span>
+                              </DropdownMenuItem>
+                          </AlertDialogTrigger>
+                      </DropdownMenuContent>
+                  </DropdownMenu>
+                   {/* Edit Column Dialog Content */}
+                  <DialogContent className="sm:max-w-[425px]">
+                      <EditColumnForm
+                          column={column}
+                          onEditColumn={onEditColumn}
+                          onClose={handleEditDialogClose}
+                      />
+                  </DialogContent>
+               </Dialog> {/* End Edit Dialog Wrapper */}
 
-            {/* Delete Confirmation Dialog Content */}
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the
-                    <span className="font-semibold"> {column.title}</span> column and all tasks within it.
-                </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={confirmDeleteColumn} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                    Delete
-                </AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
+                {/* Delete Confirmation Dialog Content */}
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete the
+                        <span className="font-semibold"> {column.title}</span> column and all tasks within it.
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={confirmDeleteColumn} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Delete
+                    </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
            </AlertDialog>
         </div>
 
