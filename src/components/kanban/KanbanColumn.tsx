@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from "react";
@@ -82,7 +83,8 @@ export function KanbanColumn({
 
   return (
     <div
-      className={`flex flex-col w-72 md:w-80 lg:w-96 bg-secondary rounded-lg shadow-inner h-full transition-colors duration-200 ${
+      // Set fixed width for columns, responsive for different screen sizes
+      className={`flex flex-col w-72 md:w-80 lg:w-96 flex-shrink-0 bg-secondary rounded-lg shadow-inner h-full transition-colors duration-200 ${
         isOver ? "bg-accent/20" : ""
       }`}
       onDragOver={handleDragOver}
@@ -175,3 +177,4 @@ export function KanbanColumn({
     </div>
   );
 }
+
