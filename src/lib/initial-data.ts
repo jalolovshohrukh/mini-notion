@@ -37,4 +37,10 @@ export const initialTasks: Task[] = [
     description: "Apply the requested theme and styling.",
     columnId: "inprogress",
   },
+   {
+    id: "task-6",
+    title: "Implement Add/Delete Columns",
+    description: "Allow users to add and remove columns.",
+    columnId: "todo",
+   }
 ];

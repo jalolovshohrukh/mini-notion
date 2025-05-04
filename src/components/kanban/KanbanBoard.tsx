@@ -4,31 +4,37 @@ import React, { useState, useEffect } from "react";
 import { KanbanColumn } from "./KanbanColumn";
 import type { Task, Column } from "@/lib/types";
 import { initialColumns, initialTasks } from "@/lib/initial-data";
-
-// Helper function to generate unique IDs (client-side)
-const generateId = () => `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { AddColumnForm } from "./AddColumnForm"; // Import the new form
+import { generateTaskId, generateColumnId } from "@/lib/utils"; // Import ID generators
 
 export function KanbanBoard() {
   const [columns, setColumns] = useState<Column[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
+  const [isAddColumnDialogOpen, setIsAddColumnDialogOpen] = useState(false);
+
 
   // Load initial data or from localStorage only on the client
   useEffect(() => {
     setIsClient(true);
     const savedTasks = localStorage.getItem("kanbanTasks");
-    const savedColumns = localStorage.getItem("kanbanColumns"); // If columns are dynamic
+    const savedColumns = localStorage.getItem("kanbanColumns");
+
+    if (savedColumns) {
+        setColumns(JSON.parse(savedColumns));
+    } else {
+        setColumns(initialColumns);
+    }
 
     if (savedTasks) {
       setTasks(JSON.parse(savedTasks));
     } else {
       setTasks(initialTasks);
     }
-
-    // Assuming columns are static for now, but could load saved columns here too
-    setColumns(initialColumns);
-
   }, []);
 
   // Save tasks to localStorage whenever they change (client-side only)
@@ -37,6 +43,13 @@ export function KanbanBoard() {
       localStorage.setItem("kanbanTasks", JSON.stringify(tasks));
     }
   }, [tasks, isClient]);
+
+  // Save columns to localStorage whenever they change (client-side only)
+  useEffect(() => {
+    if (isClient) {
+        localStorage.setItem("kanbanColumns", JSON.stringify(columns));
+    }
+  }, [columns, isClient]);
 
 
   const handleDrop = (columnId: string, taskId: string) => {
@@ -52,7 +65,7 @@ export function KanbanBoard() {
      if (!isClient) return; // Prevent adding tasks on server render
      const newTask: Task = {
         ...newTaskData,
-        id: generateId(), // Generate ID client-side
+        id: generateTaskId(), // Generate Task ID client-side
         columnId: columnId,
      };
      setTasks((prevTasks) => [...prevTasks, newTask]);
@@ -68,6 +81,25 @@ export function KanbanBoard() {
 
   const handleDeleteTask = (taskId: string) => {
     setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
+     // Optional: Also delete tasks when a column is deleted (more complex logic needed)
+  };
+
+   const handleAddColumn = (title: string) => {
+    if (!isClient) return;
+    const newColumn: Column = {
+      id: generateColumnId(), // Generate Column ID client-side
+      title: title,
+    };
+    setColumns((prevColumns) => [...prevColumns, newColumn]);
+    setIsAddColumnDialogOpen(false); // Close dialog after adding
+  };
+
+  const handleDeleteColumn = (columnIdToDelete: string) => {
+     if (!isClient) return;
+     // Prevent deleting the last column maybe? Add confirmation?
+     setColumns((prevColumns) => prevColumns.filter((column) => column.id !== columnIdToDelete));
+     // Also delete tasks associated with this column
+     setTasks((prevTasks) => prevTasks.filter((task) => task.columnId !== columnIdToDelete));
   };
 
 
@@ -120,8 +152,23 @@ export function KanbanBoard() {
           onAddTask={handleAddTask}
           onEditTask={handleEditTask}
           onDeleteTask={handleDeleteTask}
+          onDeleteColumn={handleDeleteColumn} // Pass delete handler
         />
       ))}
+       {/* Button to add a new column */}
+       <Dialog open={isAddColumnDialogOpen} onOpenChange={setIsAddColumnDialogOpen}>
+          <DialogTrigger asChild>
+            <Button
+                variant="outline"
+                className="h-full min-w-[280px] flex-shrink-0 border-dashed border-2 hover:border-primary hover:text-primary"
+             >
+                <Plus className="mr-2 h-4 w-4" /> Add New Column
+             </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+             <AddColumnForm onAddColumn={handleAddColumn} onClose={() => setIsAddColumnDialogOpen(false)} />
+          </DialogContent>
+        </Dialog>
     </div>
   );
 }
