@@ -22,7 +22,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"; // Import Select components
+} from "@/components/ui/select";
 import {
   DialogHeader,
   DialogTitle,
@@ -30,14 +30,22 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import type { Task, Priority } from "@/lib/types"; // Import Priority type
+import type { Task, Priority } from "@/lib/types";
 
 const priorities: Priority[] = ["High", "Medium", "Low"];
+
+// Mock user data - replace with actual user fetching logic
+const mockUsers = [
+  { id: "user-1", name: "Alice" },
+  { id: "user-2", name: "Bob" },
+  { id: "user-3", name: "Charlie" },
+];
 
 const formSchema = z.object({
   title: z.string().min(1, { message: "Title is required." }).max(50),
   description: z.string().max(200).optional(),
-  priority: z.enum(priorities).default("Medium"), // Add priority field with default
+  priority: z.enum(priorities).default("Medium"),
+  assigneeId: z.string().optional(), // Add assigneeId field (optional)
 });
 
 type AddTaskFormProps = {
@@ -52,15 +60,19 @@ export function AddTaskForm({ columnId, onAddTask, onClose }: AddTaskFormProps) 
     defaultValues: {
       title: "",
       description: "",
-      priority: "Medium", // Set default priority for the form
+      priority: "Medium",
+      assigneeId: "", // Default assignee to empty
     },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
+    const selectedUser = mockUsers.find(user => user.id === values.assigneeId);
     onAddTask({
       title: values.title,
       description: values.description || undefined,
-      priority: values.priority, // Pass priority
+      priority: values.priority,
+      assigneeId: values.assigneeId || undefined, // Pass assigneeId
+      assigneeName: selectedUser?.name || undefined, // Pass assigneeName
     });
     form.reset();
     onClose(); // Close dialog on successful submit
@@ -102,7 +114,6 @@ export function AddTaskForm({ columnId, onAddTask, onClose }: AddTaskFormProps) 
               </FormItem>
             )}
           />
-          {/* Priority Select Field */}
           <FormField
             control={form.control}
             name="priority"
@@ -119,6 +130,32 @@ export function AddTaskForm({ columnId, onAddTask, onClose }: AddTaskFormProps) 
                     {priorities.map((priority) => (
                       <SelectItem key={priority} value={priority}>
                         {priority}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+           {/* Assignee Select Field */}
+          <FormField
+            control={form.control}
+            name="assigneeId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Assignee (Optional)</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select assignee" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="">Unassigned</SelectItem>
+                    {mockUsers.map((user) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

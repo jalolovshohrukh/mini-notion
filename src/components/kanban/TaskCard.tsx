@@ -5,6 +5,7 @@ import React, { useState } from "react";
 import type { Task, Priority, Column } from "@/lib/types"; // Import Column type
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge, badgeVariants } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"; // Import Avatar components
 import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet"; // Import Sheet components
 import { TaskDetailSheet } from "./TaskDetailSheet"; // Import the new detail sheet component
 import { cn } from "@/lib/utils";
@@ -30,6 +31,14 @@ const getPriorityBadgeVariant = (priority: Priority | undefined): VariantProps<t
         default:
             return "secondary"; // Fallback (gray) if undefined
     }
+};
+
+// Helper function to get initials from name
+const getInitials = (name?: string): string => {
+    if (!name) return "?";
+    const names = name.split(' ');
+    if (names.length === 1) return names[0].charAt(0).toUpperCase();
+    return `${names[0].charAt(0)}${names[names.length - 1].charAt(0)}`.toUpperCase();
 };
 
 
@@ -66,10 +75,18 @@ export function TaskCard({ task, column, isDragging, onEditTask, onDeleteTask }:
                 {task.description}
               </CardDescription>
             )}
-             <div className="flex justify-start pt-1">
+             <div className="flex justify-between items-center pt-1">
                <Badge variant={getPriorityBadgeVariant(task.priority)} className="text-xs px-1.5 py-0.5">
                  {task.priority || "Medium"}
                </Badge>
+                {task.assigneeName && (
+                 <Avatar className="h-6 w-6">
+                     {/* <AvatarImage src="/path/to/avatar.jpg" alt={task.assigneeName} /> */}
+                     <AvatarFallback className="text-xs bg-muted text-muted-foreground">
+                         {getInitials(task.assigneeName)}
+                     </AvatarFallback>
+                 </Avatar>
+                )}
              </div>
           </CardHeader>
         </Card>

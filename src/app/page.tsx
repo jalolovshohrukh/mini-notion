@@ -62,21 +62,25 @@ export default function Home() {
         if (savedTasks) {
             try {
                 const parsedTasks = JSON.parse(savedTasks);
-                if (Array.isArray(parsedTasks) && parsedTasks.every(task =>
+                 // Validate tasks including optional assignee fields
+                 if (Array.isArray(parsedTasks) && parsedTasks.every(task =>
                     task.id &&
                     task.title &&
                     task.columnId &&
-                    (task.priority === undefined || validPriorities.includes(task.priority))
-                )) {
+                    (task.priority === undefined || validPriorities.includes(task.priority)) &&
+                    (task.assigneeId === undefined || typeof task.assigneeId === 'string') &&
+                    (task.assigneeName === undefined || typeof task.assigneeName === 'string')
+                 )) {
                     const tasksWithDefaults = parsedTasks.map(task => ({
                         ...task,
                         priority: task.priority || "Medium"
+                        // Assignee fields are optional, keep them as they are or undefined
                     }));
                     setTasks(tasksWithDefaults);
-                } else {
+                 } else {
                     console.warn("Invalid tasks data found in localStorage, using initial data.");
                     setTasks(initialTasks.map(task => ({ ...task, priority: task.priority || "Medium" })));
-                }
+                 }
             } catch (error) {
                 console.error("Error parsing tasks from localStorage:", error);
                 setTasks(initialTasks.map(task => ({ ...task, priority: task.priority || "Medium" })));
@@ -119,10 +123,13 @@ export default function Home() {
   const handleAddTask = (columnId: string, newTaskData: Omit<Task, "id" | "columnId">) => {
      if (!isClient || !user) return; // Check auth
      const newTask: Task = {
-        ...newTaskData,
         id: generateTaskId(),
         columnId: columnId,
+        title: newTaskData.title,
+        description: newTaskData.description,
         priority: newTaskData.priority || "Medium",
+        assigneeId: newTaskData.assigneeId, // Include assigneeId
+        assigneeName: newTaskData.assigneeName, // Include assigneeName
      };
      setTasks((prevTasks) => [...prevTasks, newTask]);
   };
@@ -131,7 +138,14 @@ export default function Home() {
      if (!isClient || !user) return; // Check auth
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
-        task.id === taskId ? { ...task, ...updatedTaskData } : task
+        task.id === taskId ? {
+            ...task, // Keep existing properties like id and columnId
+            title: updatedTaskData.title,
+            description: updatedTaskData.description,
+            priority: updatedTaskData.priority,
+            assigneeId: updatedTaskData.assigneeId, // Update assigneeId
+            assigneeName: updatedTaskData.assigneeName // Update assigneeName
+        } : task
       )
     );
   };

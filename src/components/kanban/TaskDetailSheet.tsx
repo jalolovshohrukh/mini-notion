@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import type { Task, Column, Priority } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Badge, badgeVariants } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"; // Import Avatar
 import {
   SheetHeader,
   SheetTitle,
@@ -22,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Trash2, Sparkles, Calendar, GripVertical, Tag } from "lucide-react"; // Added icons
+import { Trash2, Sparkles, Calendar, GripVertical, Tag, User as UserIcon } from "lucide-react"; // Added UserIcon
 import { cn } from "@/lib/utils";
 import type { VariantProps } from "class-variance-authority";
 import {
@@ -49,6 +50,14 @@ interface TaskDetailSheetProps {
 // Priorities array for Select
 const priorities: Priority[] = ["High", "Medium", "Low"];
 
+// Mock user data - replace with actual user fetching logic
+const mockUsers = [
+  { id: "user-1", name: "Alice" },
+  { id: "user-2", name: "Bob" },
+  { id: "user-3", name: "Charlie" },
+];
+
+
 // Helper function to get badge variant based on priority (copied from TaskCard)
 const getPriorityBadgeVariant = (priority: Priority | undefined): VariantProps<typeof badgeVariants>["variant"] => {
     switch (priority) {
@@ -63,19 +72,32 @@ const getPriorityBadgeVariant = (priority: Priority | undefined): VariantProps<t
     }
 };
 
+// Helper function to get initials from name (copied from TaskCard)
+const getInitials = (name?: string): string => {
+    if (!name) return "?";
+    const names = name.split(' ');
+    if (names.length === 1) return names[0].charAt(0).toUpperCase();
+    return `${names[0].charAt(0)}${names[names.length - 1].charAt(0)}`.toUpperCase();
+};
+
+
 export function TaskDetailSheet({ task, column, onEditTask, onDeleteTask, onClose }: TaskDetailSheetProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(task.title);
     const [editedDescription, setEditedDescription] = useState(task.description || "");
     const [editedPriority, setEditedPriority] = useState<Priority>(task.priority || "Medium");
+    const [editedAssigneeId, setEditedAssigneeId] = useState<string | undefined>(task.assigneeId); // State for assignee
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
 
     const handleSave = () => {
+        const selectedUser = mockUsers.find(user => user.id === editedAssigneeId);
         onEditTask(task.id, {
             title: editedTitle,
             description: editedDescription || undefined,
             priority: editedPriority,
+            assigneeId: editedAssigneeId || undefined,
+            assigneeName: selectedUser?.name || undefined,
         });
         setIsEditing(false);
         // Optionally close the sheet after saving, or keep it open
@@ -87,6 +109,7 @@ export function TaskDetailSheet({ task, column, onEditTask, onDeleteTask, onClos
         setEditedTitle(task.title);
         setEditedDescription(task.description || "");
         setEditedPriority(task.priority || "Medium");
+        setEditedAssigneeId(task.assigneeId); // Reset assignee
         setIsEditing(false);
     };
 
@@ -121,7 +144,7 @@ export function TaskDetailSheet({ task, column, onEditTask, onDeleteTask, onClos
             <Sparkles className="h-5 w-5 text-muted-foreground flex-shrink-0" />
             <Label htmlFor="status" className="w-24 text-sm font-medium text-muted-foreground flex-shrink-0">Status</Label>
             {/* Display column title as status */}
-            <Badge variant="secondary" className="text-sm" style={{ backgroundColor: column.color, color: 'black' /* Adjust text color based on column.color brightness if needed */ }}>{column.title}</Badge>
+            <Badge variant="secondary" className="text-sm">{column.title}</Badge>
           </div>
 
           {/* Priority Section */}
@@ -136,7 +159,9 @@ export function TaskDetailSheet({ task, column, onEditTask, onDeleteTask, onClos
                     <SelectContent>
                         {priorities.map((p) => (
                         <SelectItem key={p} value={p}>
-                            <Badge variant={getPriorityBadgeVariant(p)} className="mr-2 px-1 py-0.5 text-xs">{p}</Badge>
+                            {/* Display badge inside the select item for visual consistency */}
+                             <Badge variant={getPriorityBadgeVariant(p)} className="mr-2 px-1 py-0.5 text-xs">{p}</Badge>
+
                         </SelectItem>
                         ))}
                     </SelectContent>
@@ -146,12 +171,48 @@ export function TaskDetailSheet({ task, column, onEditTask, onDeleteTask, onClos
             )}
           </div>
 
+          {/* Assignee Section */}
+          <div className="flex items-center space-x-4">
+              <UserIcon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+              <Label htmlFor="assignee" className="w-24 text-sm font-medium text-muted-foreground flex-shrink-0">Assignee</Label>
+              {isEditing ? (
+                  <Select onValueChange={(value: string) => setEditedAssigneeId(value)} defaultValue={editedAssigneeId || ""}>
+                      <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Select assignee" />
+                      </SelectTrigger>
+                      <SelectContent>
+                          <SelectItem value="">Unassigned</SelectItem>
+                          {mockUsers.map((user) => (
+                              <SelectItem key={user.id} value={user.id}>
+                                  {user.name}
+                              </SelectItem>
+                          ))}
+                      </SelectContent>
+                  </Select>
+              ) : (
+                  task.assigneeName ? (
+                      <div className="flex items-center space-x-2">
+                          <Avatar className="h-6 w-6">
+                              {/* <AvatarImage src="/path/to/avatar.jpg" alt={task.assigneeName} /> */}
+                              <AvatarFallback className="text-xs bg-muted text-muted-foreground">
+                                  {getInitials(task.assigneeName)}
+                              </AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm">{task.assigneeName}</span>
+                      </div>
+                  ) : (
+                      <span className="text-sm text-muted-foreground">Unassigned</span>
+                  )
+              )}
+          </div>
+
+
            {/* Placeholder sections inspired by image */}
-           <div className="flex items-center space-x-4 opacity-50">
+           {/* <div className="flex items-center space-x-4 opacity-50">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground flex-shrink-0"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 <Label className="w-24 text-sm font-medium text-muted-foreground flex-shrink-0">Assignee</Label>
                 <span className="text-sm text-muted-foreground">Empty</span>
-           </div>
+           </div> */}
             <div className="flex items-center space-x-4 opacity-50">
                 <Calendar className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                 <Label className="w-24 text-sm font-medium text-muted-foreground flex-shrink-0">Due</Label>
