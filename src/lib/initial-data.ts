@@ -15,8 +15,8 @@ export const initialTasks: Task[] = [
     description: "Initialize Next.js app and configure Tailwind.",
     priority: "High",
     columnId: "done",
-    assigneeId: "user-1", // Example assignee
-    assigneeName: "Alice",
+    assigneeId: "user-1", // Ilhom
+    assigneeName: "Ilhom",
   },
   {
     id: "task-2",
@@ -24,8 +24,8 @@ export const initialTasks: Task[] = [
     description: "Build Board, Column, and Task components.",
     priority: "High",
     columnId: "inprogress",
-     assigneeId: "user-2", // Example assignee
-    assigneeName: "Bob",
+     assigneeId: "user-2", // Parvina
+    assigneeName: "Parvina",
   },
   {
     id: "task-3",
@@ -41,8 +41,8 @@ export const initialTasks: Task[] = [
     description: "Implement adding, editing, and deleting tasks.",
     priority: "Low",
     columnId: "todo",
-     assigneeId: "user-1",
-     assigneeName: "Alice",
+     assigneeId: "user-1", // Ilhom
+     assigneeName: "Ilhom",
   },
    {
     id: "task-5",
@@ -50,8 +50,8 @@ export const initialTasks: Task[] = [
     description: "Apply the requested theme and styling.",
     priority: "Medium",
     columnId: "inprogress",
-     assigneeId: "user-2",
-     assigneeName: "Bob",
+     assigneeId: "user-2", // Parvina
+     assigneeName: "Parvina",
   },
    {
     id: "task-6",
@@ -59,5 +59,7 @@ export const initialTasks: Task[] = [
     description: "Allow users to add and remove columns.",
     priority: "High",
     columnId: "todo",
+    assigneeId: "user-3", // Madina
+    assigneeName: "Madina",
    }
 ];

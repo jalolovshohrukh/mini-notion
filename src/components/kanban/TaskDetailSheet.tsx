@@ -50,11 +50,13 @@ interface TaskDetailSheetProps {
 // Priorities array for Select
 const priorities: Priority[] = ["High", "Medium", "Low"];
 
-// Mock user data - replace with actual user fetching logic
+// Updated mock user data
 const mockUsers = [
-  { id: "user-1", name: "Alice" },
-  { id: "user-2", name: "Bob" },
-  { id: "user-3", name: "Charlie" },
+  { id: "user-1", name: "Ilhom" },
+  { id: "user-2", name: "Parvina" },
+  { id: "user-3", name: "Madina" },
+  { id: "user-4", name: "Lobar" },
+  { id: "user-5", name: "Somon" },
 ];
 
 // Use a non-empty string for the "unassigned" value
