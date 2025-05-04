@@ -62,13 +62,13 @@ export function KanbanBoard({
              setDraggingTaskId(null); // Ensure task dragging state is cleared
              // console.log('Dragging Column:', columnId);
          }
-      } else {
-          // If drag started on something else (like column body without handle), prevent it.
-          // event.preventDefault(); // Prevent default sometimes stops necessary drag actions
-          // event.stopPropagation();
+      } else if (target.closest('[data-column-id]') && !dragHandle) {
+          // Prevent drag if started on column body but NOT the handle
+          event.preventDefault();
+          event.stopPropagation();
           setDraggingColumnId(null);
           setDraggingTaskId(null);
-          // console.log('Drag prevented on:', target);
+          // console.log('Drag prevented on column body (not handle):', target);
       }
     };
 

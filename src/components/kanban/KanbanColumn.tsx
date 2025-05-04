@@ -94,6 +94,7 @@ export function KanbanColumn({
       // If dragging something not recognized (or the column itself over itself)
       setIsOverTaskZone(false);
       setIsOverColumnZone(false);
+      e.dataTransfer.dropEffect = "none"; // Indicate dropping is not allowed here
     }
   };
 
@@ -110,11 +111,13 @@ export function KanbanColumn({
 
     // console.log("Drop Event:", { taskId, draggedColId, currentColumnId: column.id, draggingTaskId, draggingColumnId });
 
-
-    if (taskId && draggingTaskId === taskId) { // Handle task drop
+    // Check for task drop first
+    if (taskId && draggingTaskId === taskId) {
         // console.log(`Dropping Task ${taskId} onto Column ${column.id}`);
         onTaskDrop(column.id, taskId);
-    } else if (draggedColId && draggingColumnId === draggedColId && draggedColId !== column.id) { // Handle column drop
+    }
+    // Then check for column drop
+    else if (draggedColId && draggingColumnId === draggedColId && draggedColId !== column.id) {
         // console.log(`Dropping Column ${draggedColId} onto Column ${column.id}`);
         onColumnDrop(draggedColId, column.id);
     } else {
@@ -187,15 +190,18 @@ export function KanbanColumn({
         // We only need to ensure the drag doesn't start if NOT on the handle.
         const handle = (e.target as HTMLElement).closest('.column-drag-handle');
         if (!handle) {
-            e.preventDefault(); // Prevent drag if not started on handle
-            return;
+            // Check if the target is a task card itself, allow drag if it is
+            if (!(e.target as HTMLElement).closest('[data-task-id]')) {
+                e.preventDefault(); // Prevent drag if not started on handle or task card
+                return;
+            }
         }
         // Data setting is done in the board's listener.
       }}
       className={cn(
           "flex flex-col w-72 flex-shrink-0 rounded-lg shadow h-full relative border border-border/50", // Added base shadow and border
            // Visual feedback for being a potential column drop target
-           isOverColumnZone ? "ring-2 ring-offset-2 ring-primary" : "",
+           isOverColumnZone && draggingColumnId ? "ring-2 ring-offset-2 ring-primary" : "",
            // Add opacity if another column is being dragged over this one
            draggingColumnId && draggingColumnId !== column.id && isOverColumnZone ? "opacity-50" : "opacity-100"
         )}
@@ -205,7 +211,7 @@ export function KanbanColumn({
       onDrop={handleDrop}
     >
          {/* Column Drop Zone Indicator (shows when another column is dragged over) */}
-         {isOverColumnZone && (
+         {isOverColumnZone && draggingColumnId && (
              <div className="absolute inset-0 border-4 border-dashed border-primary rounded-lg pointer-events-none z-20 flex items-center justify-center bg-primary/10">
                 <span className="text-primary font-semibold">{t('dropZone')}</span>
              </div>
