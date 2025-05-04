@@ -52,7 +52,8 @@ export default function LoginPage() {
       // Redirect is handled by the effect watching the user state
       // router.push('/'); // No need to push here, effect handles it
     } catch (err: any) {
-        console.error("Login failed:", err);
+        // Log the full error object for detailed debugging
+        console.error("Detailed Login Error:", err);
         // Provide more user-friendly messages based on Firebase error codes
         switch (err.code) {
             case 'auth/user-not-found':
