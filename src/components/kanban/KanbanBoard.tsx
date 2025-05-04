@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -141,7 +142,7 @@ export function KanbanBoard() {
   }
 
   return (
-    <div className="flex h-full w-full gap-4 overflow-x-auto p-4 bg-background">
+    <div className="flex h-full gap-4 overflow-x-auto p-4 bg-background"> {/* Removed w-full */}
       {columns.map((column) => (
         <KanbanColumn
           key={column.id}
